@@ -1,0 +1,161 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>eu.ddmore</groupId>
+    <artifactId>standalone-execution-environment</artifactId>
+    <packaging>pom</packaging>
+    <version>1.1.0-SNAPSHOT</version>
+    <name>Standalone Execution Environment</name>
+    
+    <properties>
+        <!-- Versions of the tools included in SEE -->
+		<r.tel.package.version>0.0.3</r.tel.package.version>
+        <rnmimport.version>3.9</rnmimport.version>
+        <rnmgraphics.version>3.2.1</rnmgraphics.version>
+        <r.version>3.0.3</r.version>
+
+        <!-- To try and reduce confusion over properties referring to downloaded artifacts and properties
+             referring to artifacts in unzipped form, properties named *.binary.* are intended to refer to
+             zipped artifacts whereas properties named *.bundle.* are intended to refer to artifacts in
+             unzipped form that are ready to be directly copied into the archive to be built. -->
+        
+        <static.content.location.embedded>src/main/lib/</static.content.location.embedded>
+        <r.binary.name>R-${r.version}.zip</r.binary.name>
+        <r.bundle.target>${project.build.directory}/R-bundle</r.bundle.target>
+        <r.tel.package.binary.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-R_TEL/lastSuccessfulBuild/artifact/.__artefacts/</r.tel.package.binary.url>
+        <!-- Note that the build number here cannot be parameterised easily since maven-wagon-plugin cannot handle wildcards -->
+        <r.tel.package.binary.name>DDMoRe.TEL_${r.tel.package.version}.zip</r.tel.package.binary.name>
+        <r.tel.package.binary.target>${project.build.directory}</r.tel.package.binary.target>
+        <r.tel.packages.target>${project.build.directory}/R-packages</r.tel.packages.target>
+		<rnmimport.package.binary.name>RNMImport_${rnmimport.version}.zip</rnmimport.package.binary.name>
+		<rnmgraphics.package.binary.name>RNMGraphics_${rnmgraphics.version}.zip</rnmgraphics.package.binary.name>
+        <build.timestamp>${maven.build.timestamp}</build.timestamp><!-- workaround for http://jira.codehaus.org/browse/MRESOURCES-99 -->
+    </properties>
+    
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>wagon-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>download-DDMoRe-TEL.package</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>download-single</goal>
+                        </goals>
+                        <configuration>
+                            <serverId>jenkins</serverId>
+                            <url>${r.tel.package.binary.url}</url>
+                            <fromFile>${r.tel.package.binary.name}</fromFile>
+                            <toDir>${r.tel.package.binary.target}</toDir>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>unzip-downloaded-binaries</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                    
+                                <echo message="Unzipping ${r.tel.package.binary.name}" />
+                                <unzip
+                                    src="${r.tel.package.binary.target}/${r.tel.package.binary.name}"
+                                    dest="${r.tel.packages.target}" />
+                                    
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>unzip-static-resources</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                            
+                                <echo message="Unzipping the R zip" />
+                                <unzip  src="${static.content.location.embedded}/${r.binary.name}"
+                                        dest="${r.bundle.target}">
+                                    <globmapper from="R/*" to="*"/>
+                                </unzip>
+                                
+                                <echo message="Unzipping ${rnmimport.package.binary.name}" />
+                                <unzip  src="${static.content.location.embedded}/${rnmimport.package.binary.name}"
+                                        dest="${r.tel.packages.target}" />
+                                <echo message="Unzipping ${rnmgraphics.package.binary.name}" />
+                                <unzip  src="${static.content.location.embedded}/${rnmgraphics.package.binary.name}"
+                                        dest="${r.tel.packages.target}" />
+                                     
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+                    
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4</version> <!-- If this version is bumped up to >=2.5 then files in the built archive become read-only!? -->
+                <executions>
+                    <execution>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/binary.xml</descriptor>
+                            </descriptors>
+                            <attach>false</attach> <!-- Don't want the actual (huge) artifacts deployed to Artifactory, just the POMs -->
+                        </configuration>
+                        <id>make-binary</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+        </plugins>
+        
+        <extensions>
+            <extension>
+                <!-- To enable scp for wagon-maven-plugin -->
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>1.0</version>
+            </extension>
+        </extensions>
+        
+        <pluginManagement>
+            <plugins>
+	            <plugin>
+	                <groupId>org.codehaus.mojo</groupId>
+	                <artifactId>wagon-maven-plugin</artifactId>
+	                <version>1.0-beta-5</version>
+	                <configuration>
+	                   <serverId>filestore</serverId> <!-- This can be used to provide authentication information in your local Maven settings.xml file if required -->
+	                </configuration>
+	            </plugin>
+            </plugins>
+        </pluginManagement>
+        
+    </build>
+    
+    <url>http://ddmore.eu/</url>
+    <description>DDMoRe Standalone Execution Environment is a modelling and simulation environment consisting of existing modelling tools and components developed by DDMoRe project.</description>
+    <organization>
+        <name>Mango Solutions</name>
+        <url>http://www.mango-solutions.com</url>
+    </organization>
+    <inceptionYear>2014</inceptionYear>
+</project>

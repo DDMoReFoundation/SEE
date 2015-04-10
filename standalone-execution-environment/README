@@ -1,0 +1,29 @@
+Standalone Execution Environment Base Module
+=============================================
+This Maven module is responsible for assembling an see-base tool.
+
+Provider:  [ Mango Solutions ](http://www.mango-solutions.com "data analysis that delivers")
+
+Glossary
+---------------------------------------------
+
+%ROOT% - root directory of the SEE module
+
+Contents
+---------------------------------------------
+
+* %ROOT%\misc\rsetup - holds script run against vanilla R installation prior to adding it to repository
+* %ROOT%\src\main\lib - this directory holds see-installer maven module which implements the installation workflow
+* %ROOT%\src\main\assembly - holds assembly descriptors for SEE artifacts
+* %ROOT%\src\test\runtime - holds scripts that are included in the root directory of the resulting SEE artifact
+
+
+Guide
+---------------------------------------------
+
+To build, run 
+	mvn clean install -Dr.tel.package.binary.url=http://location/of/DDMoRe.TEL/package
+from standalone-execution-environment directory
+
+
+

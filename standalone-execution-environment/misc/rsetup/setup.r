@@ -8,10 +8,6 @@
 
 mainReposURL <- 'http://www.stats.bris.ac.uk/R';
 
-statet.dep=c("rj", "rj.gd");
-print('installing StatET packages');
-install.packages(statet.dep, repos="http://download.walware.de/rj-1.1");
-
 ddmore.tel.dep=c("bitops", "brew", "digest", "RCurl", "rjson", "roxygen2", "stringr", "XML");
 print('installing TEL R package dependencies');
 install.packages(ddmore.tel.dep, repos=mainReposURL);

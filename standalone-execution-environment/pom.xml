@@ -6,32 +6,35 @@
     <packaging>pom</packaging>
     <version>1.1.0-SNAPSHOT</version>
     <name>Standalone Execution Environment</name>
-    
+
     <properties>
         <!-- Versions of the tools included in SEE -->
-		<r.tel.package.version>0.0.3</r.tel.package.version>
+        <r.tel.package.version>0.0.3</r.tel.package.version>
         <rnmimport.version>3.9</rnmimport.version>
         <rnmgraphics.version>3.2.1</rnmgraphics.version>
         <r.version>3.0.3</r.version>
 
-        <!-- To try and reduce confusion over properties referring to downloaded artifacts and properties
-             referring to artifacts in unzipped form, properties named *.binary.* are intended to refer to
-             zipped artifacts whereas properties named *.bundle.* are intended to refer to artifacts in
-             unzipped form that are ready to be directly copied into the archive to be built. -->
-        
+        <!-- To try and reduce confusion over properties referring to downloaded 
+            artifacts and properties referring to artifacts in unzipped form, properties 
+            named *.binary.* are intended to refer to zipped artifacts whereas properties 
+            named *.bundle.* are intended to refer to artifacts in unzipped form that 
+            are ready to be directly copied into the archive to be built. -->
+
         <static.content.location.embedded>src/main/lib/</static.content.location.embedded>
         <r.binary.name>R-${r.version}.zip</r.binary.name>
         <r.bundle.target>${project.build.directory}/R-bundle</r.bundle.target>
         <r.tel.package.binary.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-R_TEL/lastSuccessfulBuild/artifact/.__artefacts/</r.tel.package.binary.url>
-        <!-- Note that the build number here cannot be parameterised easily since maven-wagon-plugin cannot handle wildcards -->
+        <!-- Note that the build number here cannot be parameterised easily 
+            since maven-wagon-plugin cannot handle wildcards -->
         <r.tel.package.binary.name>DDMoRe.TEL_${r.tel.package.version}.zip</r.tel.package.binary.name>
         <r.tel.package.binary.target>${project.build.directory}</r.tel.package.binary.target>
         <r.tel.packages.target>${project.build.directory}/R-packages</r.tel.packages.target>
-		<rnmimport.package.binary.name>RNMImport_${rnmimport.version}.zip</rnmimport.package.binary.name>
-		<rnmgraphics.package.binary.name>RNMGraphics_${rnmgraphics.version}.zip</rnmgraphics.package.binary.name>
-        <build.timestamp>${maven.build.timestamp}</build.timestamp><!-- workaround for http://jira.codehaus.org/browse/MRESOURCES-99 -->
+        <rnmimport.package.binary.name>RNMImport_${rnmimport.version}.zip</rnmimport.package.binary.name>
+        <rnmgraphics.package.binary.name>RNMGraphics_${rnmgraphics.version}.zip</rnmgraphics.package.binary.name>
+        <build.timestamp>${maven.build.timestamp}</build.timestamp><!-- workaround 
+            for http://jira.codehaus.org/browse/MRESOURCES-99 -->
     </properties>
-    
+
 
     <build>
         <plugins>
@@ -65,12 +68,13 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
-                                    
-                                <echo message="Unzipping ${r.tel.package.binary.name}" />
+
+                                <echo
+                                    message="Unzipping ${r.tel.package.binary.name}" />
                                 <unzip
                                     src="${r.tel.package.binary.target}/${r.tel.package.binary.name}"
                                     dest="${r.tel.packages.target}" />
-                                    
+
                             </target>
                         </configuration>
                         <goals>
@@ -82,20 +86,26 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
-                            
+
                                 <echo message="Unzipping the R zip" />
-                                <unzip  src="${static.content.location.embedded}/${r.binary.name}"
-                                        dest="${r.bundle.target}">
-                                    <globmapper from="R/*" to="*"/>
+                                <unzip
+                                    src="${static.content.location.embedded}/${r.binary.name}"
+                                    dest="${r.bundle.target}">
+                                    <globmapper from="R/*"
+                                        to="*" />
                                 </unzip>
-                                
-                                <echo message="Unzipping ${rnmimport.package.binary.name}" />
-                                <unzip  src="${static.content.location.embedded}/${rnmimport.package.binary.name}"
-                                        dest="${r.tel.packages.target}" />
-                                <echo message="Unzipping ${rnmgraphics.package.binary.name}" />
-                                <unzip  src="${static.content.location.embedded}/${rnmgraphics.package.binary.name}"
-                                        dest="${r.tel.packages.target}" />
-                                     
+
+                                <echo
+                                    message="Unzipping ${rnmimport.package.binary.name}" />
+                                <unzip
+                                    src="${static.content.location.embedded}/${rnmimport.package.binary.name}"
+                                    dest="${r.tel.packages.target}" />
+                                <echo
+                                    message="Unzipping ${rnmgraphics.package.binary.name}" />
+                                <unzip
+                                    src="${static.content.location.embedded}/${rnmgraphics.package.binary.name}"
+                                    dest="${r.tel.packages.target}" />
+
                             </target>
                         </configuration>
                         <goals>
@@ -104,17 +114,19 @@
                     </execution>
                 </executions>
             </plugin>
-                    
+
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.4</version> <!-- If this version is bumped up to >=2.5 then files in the built archive become read-only!? -->
+                <version>2.4</version> <!-- If this version is bumped up to >=2.5 then files in the built archive 
+                    become read-only!? -->
                 <executions>
                     <execution>
                         <configuration>
                             <descriptors>
                                 <descriptor>src/main/assembly/binary.xml</descriptor>
                             </descriptors>
-                            <attach>false</attach> <!-- Don't want the actual (huge) artifacts deployed to Artifactory, just the POMs -->
+                            <attach>false</attach> <!-- Don't want the actual (huge) artifacts deployed to Artifactory, just 
+                                the POMs -->
                         </configuration>
                         <id>make-binary</id>
                         <phase>package</phase>
@@ -124,9 +136,9 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
         </plugins>
-        
+
         <extensions>
             <extension>
                 <!-- To enable scp for wagon-maven-plugin -->
@@ -135,22 +147,23 @@
                 <version>1.0</version>
             </extension>
         </extensions>
-        
+
         <pluginManagement>
             <plugins>
-	            <plugin>
-	                <groupId>org.codehaus.mojo</groupId>
-	                <artifactId>wagon-maven-plugin</artifactId>
-	                <version>1.0-beta-5</version>
-	                <configuration>
-	                   <serverId>filestore</serverId> <!-- This can be used to provide authentication information in your local Maven settings.xml file if required -->
-	                </configuration>
-	            </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>wagon-maven-plugin</artifactId>
+                    <version>1.0-beta-5</version>
+                    <configuration>
+                        <serverId>filestore</serverId> <!-- This can be used to provide authentication information in your local 
+                            Maven settings.xml file if required -->
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
-        
+
     </build>
-    
+
     <url>http://ddmore.eu/</url>
     <description>DDMoRe Standalone Execution Environment is a modelling and simulation environment consisting of existing modelling tools and components developed by DDMoRe project.</description>
     <organization>

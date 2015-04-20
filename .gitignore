@@ -21,6 +21,6 @@ target/
 build/
 
 # eclipse #
-.settings
+.settings/
 .project
 .classpath

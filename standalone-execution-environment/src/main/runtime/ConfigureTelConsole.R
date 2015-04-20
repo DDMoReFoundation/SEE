@@ -1,9 +1,8 @@
-
+#
+# This script is executed in SEE home directory
 # Pre-load libraries that we know will be required, primarily the TEL package itself
 library('DDMoRe.TEL')
 library('xpose4')
-
-setwd(file.path(.MDLIDE_WORKSPACE_PATH,"../.."))
 
 # Additional initialisation specific to third party tools
 .INIT_SCRIPT_NAME="tel-init.R"

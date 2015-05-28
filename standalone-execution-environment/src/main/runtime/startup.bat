@@ -1,7 +1,7 @@
 @echo off
 
 REM  The only argument expected, if any, would be /B which would not show the command window i.e. 'silent mode'.
-REM  The arguments are passed through to the MIF and FIS startup scripts.
+REM  The arguments are passed through to the SEE services startup scripts.
 SET CMD_ARGS=%*
 
 SET SEE_HOME=%~dp0
@@ -23,7 +23,7 @@ for /D %%d in (*) do (
         call start %CMD_ARGS% %%d\see-service-startup.bat 
         
         if %ERRORLEVEL% NEQ 0 (
-            echo Failed to execute
+            echo Failed to execute %%d\see-service-startup.bat 
             pause
             exit 1
         )

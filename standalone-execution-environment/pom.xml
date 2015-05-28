@@ -155,8 +155,8 @@
                     <artifactId>wagon-maven-plugin</artifactId>
                     <version>1.0-beta-5</version>
                     <configuration>
-                        <serverId>filestore</serverId> <!-- This can be used to provide authentication information in your local 
-                            Maven settings.xml file if required -->
+                        <!-- This can be used to provide authentication information in your local Maven settings.xml file if required -->
+                        <serverId>filestore</serverId> 
                     </configuration>
                 </plugin>
             </plugins>

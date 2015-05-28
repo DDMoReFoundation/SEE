@@ -5,41 +5,41 @@ library('DDMoRe.TEL')
 library('xpose4')
 
 # Additional initialisation specific to third party tools
-.INIT_SCRIPT_NAME="tel-init.R"
+.INIT_SCRIPT_NAME <- "tel-init.R"
 .runPluginInitScriptIfExists <- function(directory) {
-    initScript = file.path(getwd(),directory,.INIT_SCRIPT_NAME)
-    result = list(script = initScript)
+    initScript <- file.path(getwd(),directory,.INIT_SCRIPT_NAME)
+    result <- list(script = initScript)
     if(file.exists(initScript)) {
-        result$exists = TRUE
-        result$loadStatus = tryCatch({
+        result$exists <- TRUE
+        result$loadStatus <- tryCatch({
             source(initScript)
             "SUCCESS"
         },
         error = function(err) { 
-            return(paste("FAILURE: ", err, sep=''))
+            paste0("FAILURE: ", err)
         })
     } else {
-        result$exists = FALSE
+        result$exists <- FALSE
     }
     return(result)
 }
 
-.printPluginInitSummary = function(pluginInitStatus) {
-    msgs = lapply(Filter(function(x){x$exists},pluginInitStatus), function(x) {
-        paste("* ", x$script, " initialization status: ", x$loadStatus,"\n", sep='') 
+.printPluginInitSummary <- function(pluginInitStatus) {
+    msgs <- lapply(Filter(function(x){x$exists},pluginInitStatus), function(x) {
+        paste0("* ", x$script, " initialization status: ", x$loadStatus,"\n") 
     })
-    cat(paste(replicate(80, "-"), collapse = ""))
-    cat("\nSEE TEL Plugins' initialization scripts execution status\n ")
-    if(!is.null(msgs) && length(msgs)>0) {
-        cat(paste(msgs,sep=''))
+    message(paste(replicate(80, "-"), collapse = ""))
+    message("\nSEE TEL Plugins' initialization scripts execution status\n ")
+    if(length(msgs)>0) {
+        message(paste0(msgs))
     } else {
-        cat("No additional TEL initialization scripts were found in SEE installation\n")
+        message("No additional TEL initialization scripts were found in SEE installation\n")
     }
-    cat(paste(replicate(80, "-"), collapse = ""))
-    cat("\n")
+    message(paste(replicate(80, "-"), collapse = ""))
+    message("\n")
 }
 
-.pluginInitStatus = lapply(dir()[file.info(dir())[,"isdir"]],.runPluginInitScriptIfExists)
+.pluginInitStatus <- lapply(dir()[file.info(dir())[,"isdir"]],.runPluginInitScriptIfExists)
 .printPluginInitSummary(.pluginInitStatus)
 
 # Start the FIS and MIF/TES servers

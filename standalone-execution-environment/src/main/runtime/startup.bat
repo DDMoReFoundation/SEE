@@ -22,7 +22,7 @@ for /D %%d in (*) do (
     if exist "%%d\see-service-startup.bat" (
         call start %CMD_ARGS% %%d\see-service-startup.bat 
         
-        if %ERRORLEVEL% NEQ 0 (
+        if NOT %ERRORLEVEL% 0 (
             echo Failed to execute %%d\see-service-startup.bat 
             pause
             exit 1

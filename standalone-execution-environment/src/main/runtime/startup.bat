@@ -38,7 +38,7 @@ FOR /L %%i in (1,1,30) do (
 		goto :startupServices
 	)
 	echo FIS is not running
-	REM Wait for one *about* 1 second, we can't use 'TIMEOUT' command since it results in errors when run in batch mode, SLEEP command comes with 2003 Resource Kit
+	REM Wait for *about* one second, we can't use 'TIMEOUT' command since it results in errors when run in batch mode, SLEEP command comes with 2003 Resource Kit
 	REM which may not be available.
 	REM We ping an address from TEST-NET-1 address block (192.0.2.0/24) which should never be routable.
 	ping 192.0.2.1 -n 2 -w 1000 > nul

@@ -14,6 +14,17 @@ SET MIF_CONNECTORS_ENV_PARAMS=
 REM  SEE is delivered with a JRE so use this Java to launch SEE services.
 SET JAVA_CMD="%SEE_HOME%\MDL_IDE\jre\bin\java.exe"
 
+IF NOT EXIST "%JAVA_CMD%" (
+    echo Java installation included in MDL IDE could not be found.
+    IF EXIST "%JAVA_HOME%\bin\java.exe" (
+        echo Using Java from JAVA_HOME environment variable
+        SET JAVA_CMD="%JAVA_HOME%\bin\java"
+    ) ELSE (
+        echo Falling beck to using Java from system path; this will fail if Java is not installed
+        SET JAVA_CMD=java
+    )
+)
+
 REM setting up environment for services
 for %%a in (*-see-env-setup.bat) do call "%%a"
 

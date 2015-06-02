@@ -11,7 +11,7 @@ REM No tool-specific settings should be added here, SEE plugins should use '*-se
 
 SET MIF_CONNECTORS_ENV_PARAMS=
 
-REM  SEE is delivered with a JRE so use this Java to launch MIF and FIS.
+REM  SEE is delivered with a JRE so use this Java to launch SEE services.
 SET JAVA_CMD="%SEE_HOME%\MDL_IDE\jre\bin\java.exe"
 
 REM setting up environment for services

@@ -6,24 +6,26 @@ SET CMD_ARGS=%*
 
 SET SEE_HOME=%~dp0
 
+cd "%SEE_HOME%"
 REM Passed to MIF startup.bat, these parameters set paths to the known locations of the tools delivered within the SEE bundle.
 REM No tool-specific settings should be added here, SEE plugins should use '*-see-env-setup.bat' scripts mechanism.
 
 SET MIF_CONNECTORS_ENV_PARAMS=
 
-REM  SEE is delivered with a JRE so use this Java to launch SEE services.
-SET JAVA_CMD="%SEE_HOME%\MDL_IDE\jre\bin\java.exe"
-
-IF NOT EXIST "%JAVA_CMD%" (
-    echo Java installation included in MDL IDE could not be found.
-    IF EXIST "%JAVA_HOME%\bin\java.exe" (
-        echo Using Java from JAVA_HOME environment variable
-        SET JAVA_CMD="%JAVA_HOME%\bin\java"
-    ) ELSE (
-        echo Falling beck to using Java from system path; this will fail if Java is not installed
-        SET JAVA_CMD=java
-    )
+:setupJava
+setlocal EnableDelayedExpansion
+REM SEE is usually delivered with JRE so if it is there use it to launch SEE services.
+SET LOCAL_JAVA_HOME=!SEE_HOME!\MDL_IDE\jre
+IF EXIST !LOCAL_JAVA_HOME! (
+    echo Java installation included in MDL IDE was found.
+	REM We don't try to replace any existing path entries possibly pointing to locations containing java.exe because Java installer also creates 
+	REM that binary in c:\windows\System32 which we can't safely remove from the Path variable. We just prepend SEE JRE's 'bin' directory location in here, so it is the first match.
+	SET PATH=!LOCAL_JAVA_HOME!\bin;!PATH!
+	SET JAVA_HOME=!LOCAL_JAVA_HOME!
+) else (
+	echo JRE installed in the environment will be used.
 )
+setlocal DisableDelayedExpansion
 
 REM setting up environment for services
 for %%a in (*-see-env-setup.bat) do call "%%a"
@@ -31,20 +33,20 @@ for %%a in (*-see-env-setup.bat) do call "%%a"
 SET FIS_DIR=fis
 
 :startupFis
-SET FIS_TRACE_FILE=%FIS_DIR%\fis.trace
-IF EXIST %FIS_TRACE_FILE% (
-	DEL %FIS_TRACE_FILE%
+SET FIS_TRACE_FILE="%FIS_DIR%\fis.trace"
+IF EXIST "%FIS_TRACE_FILE%" (
+	DEL "%FIS_TRACE_FILE%"
 )
-CALL start %CMD_ARGS% %FIS_DIR%\see-service-startup.bat 
+CALL start %CMD_ARGS% %FIS_DIR%\see-service-startup.bat
 
 if NOT ERRORLEVEL 0 (
-	echo Failed to execute %FIS_DIR%\see-service-startup.bat 
+	echo Failed to execute %FIS_DIR%\see-service-startup.bat
 	pause
 	exit 1
 )
 
 FOR /L %%i in (1,1,30) do (
-	if EXIST %FIS_TRACE_FILE% (
+	if EXIST "%FIS_TRACE_FILE%" (
 		echo FIS is running
 		goto :startupServices
 	)
@@ -57,23 +59,21 @@ FOR /L %%i in (1,1,30) do (
 
 echo Failed to start up FIS
 goto :fail
-
 :startupServices
 REM Starting up services
 for /D %%d in (*) do (
 	if NOT [%%d] == [%FIS_DIR%] (
-		if exist "%%d\see-service-startup.bat" (
-			call start %CMD_ARGS% %%d\see-service-startup.bat 
+		if exist %%d\see-service-startup.bat (
+			call start %CMD_ARGS% %%d\see-service-startup.bat
 			
 			if NOT ERRORLEVEL 0 (
-				echo Failed to execute %%d\see-service-startup.bat 
+				echo Failed to execute %%d\see-service-startup.bat
 				pause
 				exit 1
 			)
 		)
 	)
 )
-
 :complete
 exit 0
 

@@ -33,6 +33,7 @@
         <rnmgraphics.package.binary.name>RNMGraphics_${rnmgraphics.version}.zip</rnmgraphics.package.binary.name>
         <build.timestamp>${maven.build.timestamp}</build.timestamp><!-- workaround 
             for http://jira.codehaus.org/browse/MRESOURCES-99 -->
+        <see.documentation.url>http://sourceforge.net/projects/ddmore/files/install/SEE/1.1.0-SNAPSHOT/docs</see.documentation.url>
     </properties>
 
 

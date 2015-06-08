@@ -14,7 +14,7 @@ To run the software perform the following steps:
 
 Further Reading
 ---------------------------------------------
-Please refer to 'docs' directory for additional guides and help resources.
+Please refer to [ SEE Documentation ](${see.documentation.url} "SEE Documentation") for additional guides and help resources.
 
 
 Components

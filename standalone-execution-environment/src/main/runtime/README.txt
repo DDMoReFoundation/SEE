@@ -14,7 +14,7 @@ To run the software perform the following steps:
 
 Further Reading
 ---------------------------------------------
-Please refer to [ SEE Documentation ](${see.documentation.url} "SEE Documentation") for additional guides and help resources.
+Please refer to [ SEE Resources ](${see.resources.url} "SEE Resources") for additional guides, example MDL IDE projects and help resources.
 
 
 Components

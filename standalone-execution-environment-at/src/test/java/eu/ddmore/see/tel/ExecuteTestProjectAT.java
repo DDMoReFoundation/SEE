@@ -66,7 +66,7 @@ public class ExecuteTestProjectAT {
     private final File testProject;
     private final File testScript;
     private static final String testScriptPattern = "regex:^(?!(test-)).*TestScript\\.[Rr]";
-    private File atWorkingDirectoryParent = new File("target/acceptanceTestsWd").getAbsoluteFile();
+    private File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
     private File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
     private File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
     
@@ -164,16 +164,21 @@ public class ExecuteTestProjectAT {
     public void shouldSuccessfulyExecuteTestScript() throws Exception {
         File workingDirectory = prepareWorkspace(testProject, testScript);
         File testScriptPath = new File(new File(workingDirectory, testProject.getName()),testScript.getPath());
-        File wrapperScript = new File(testScriptPath.getParentFile(), "test-"+testScriptPath.getName());
+        File wrapperScript = new File(testScriptPath.getParentFile(), testFileName("R"));
         prepareScriptWrapper(testScriptPath, wrapperScript, workingDirectory);
         new TestScriptPerformer().run(rBinary, wrapperScript, workingDirectory);
     }
 
     private File prepareWorkspace(File testProject, File testScript) throws IOException {
-        File testWorkingDirectory = new File(atWorkingDirectoryParent, testScript.getName());
+        File testWorkingDirectory = generateWorkingDirectoryPath(testProject, testScript);
         testWorkingDirectory.mkdirs();
         FileUtils.copyDirectory(testProject.getParentFile(), testWorkingDirectory);
         return testWorkingDirectory;
+    }
+
+    private File generateWorkingDirectoryPath(File testProject, File testScript) {
+        String name = testProject.getName() + "_" + testScript.getName().substring(0, (testScript.getName().length()>20)?20:testScript.getName().length());
+        return new File(atWorkingDirectoryParent, name);
     }
 
     private void prepareScriptWrapper(File scriptPath, File scriptWrapper, File workingDirectory) throws IOException {
@@ -187,12 +192,16 @@ public class ExecuteTestProjectAT {
                     // 0 - this indicates success
                     .append("\n0\n}, finally = {\n") 
                     // create R workspace image file
-                    .append(String.format("\nsave.image(file='%s/%s')\n", toRPath(scriptPath.getParentFile()), scriptWrapper.getName() + ".RData"))
+                    .append(String.format("\nsave.image(file='%s/%s')\n", toRPath(scriptPath.getParentFile()), testFileName("RData")))
                     // return 100 to indicate failure in case of error
                     .append("\n}, error = function(err) { traceback()\nprint(err)\n return(100)} )\n")
                     //quit, don't create a workspace image and don't use TEL.R's quit but the base implementation, so SEE services are not shut down
                     .append("base::q('no',.seeAtResult,FALSE)"); 
         FileUtils.writeStringToFile(scriptWrapper, testScriptWrapper.toString());
+    }
+
+    private static String testFileName(String extension) {
+        return "test." + extension;
     }
 
     private String generateTestScript(File scriptPath) {

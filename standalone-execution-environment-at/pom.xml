@@ -324,20 +324,6 @@
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
                 <execution>
-                    <id>expand-templates</id>
-                    <phase>process-test-resources</phase>
-                    <configuration>
-                        <target name="expand-templates">
-                            <taskdef name="groovy"
-                                classname="org.codehaus.groovy.ant.Groovy" />
-                            <groovy><![CDATA[ evaluate(new File("./src/test/java/eu/ddmore/see/tel/ExpandTemplates.groovy")) ]]></groovy>
-                        </target>
-                    </configuration>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                </execution>
-                <execution>
                     <id>modify-temp-used-by-see</id>
                     <phase>pre-integration-test</phase>
                     <configuration>

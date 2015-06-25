@@ -217,7 +217,7 @@
                                     <goal>download-single</goal>
                                 </goals>
                                 <configuration>
-                                    <url>file://${basedir}/${license.repository.url}/nonmem</url>
+                                    <url>file://${basedir}/${license.repository.url}/Nonmem</url>
                                     <fromFile>${nonmem.license.name}</fromFile>
                                     <toFile>${see.nonmem.license.location}</toFile>
                                 </configuration>

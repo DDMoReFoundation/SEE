@@ -108,11 +108,12 @@ public class ExecuteTestProjectAT {
     /**
      * Invoked by the {@link Parameterized} runner
      * @param testProject - path of the test project
+     * @param projectName - project name - used just of pretty JUnit test report
      * @param testScrip - path of the test script
      */
-    public ExecuteTestProjectAT(Path testProject, Path testScript) {
+    public ExecuteTestProjectAT(Path testProject, String projectName, Path testScript) {
         this.testProject = testProject.toFile().getAbsoluteFile();
-        this.testScript = testProject.relativize(testScript).toFile();
+        this.testScript = testScript.toFile();
     }
 
     /**
@@ -121,7 +122,7 @@ public class ExecuteTestProjectAT {
      * 
      *@return paths of projects and test scripts within them, both absolute. 
      */
-    @Parameters(name = "{index}: Test Script {1}")
+    @Parameters(name = "{index}: Test Project {1}, Test Script {2}")
     public static Iterable<Object[]> getTestProjects() throws Exception {
         setUp();
         File testProjectsLocation = new File(System.getProperty("test.projects")).getAbsoluteFile();
@@ -146,7 +147,8 @@ public class ExecuteTestProjectAT {
         for(Entry<File, Set<Path>> en : projectsAndFiles.entrySet()) {
             Path testProject = en.getKey().toPath();
             for(Path testScript : en.getValue()) {
-                parameters.add(new Object[] {testProject, testScript});
+                Path relativeTestScript = testProject.relativize(testScript);
+                parameters.add(new Object[] {testProject, testProject.getFileName().toString(), relativeTestScript});
             }
         }
         return parameters;

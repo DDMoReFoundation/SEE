@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>eu.ddmore</groupId>
+    <artifactId>standalone-execution-environment-at</artifactId>
+    <packaging>jar</packaging>
+    <version>1.1.0-SNAPSHOT</version>
+    <properties>
+        <!-- Change the below to appropriate 'Product x' release -->
+        <see.release.version>${project.version}</see.release.version>
+        <see.home>${project.build.directory}/SEE</see.home>
+        <!-- downloaded binaries names - installer and test projects bundle -->
+        <test.projects.archive.name>mdl-ide-test-projects-1.1.0-SNAPSHOT-projects.zip</test.projects.archive.name>
+        <see.installer.archive.name>see-installer-64b.zip</see.installer.archive.name>
+        <!-- 
+        Where TPT licenses should be acquired from, this directory structure is:
+        licenses\
+        licenses\nonmem
+        licenses\nonmem\nonmem.lic
+        
+        Default location of the 'licenses' directory is the parent of the directory where the SEE repository was checked out into.
+         -->
+        <license.repository.url>../../licenses/</license.repository.url>
+        
+        <see.fis.url.shutdown>http://localhost:9010/shutdown</see.fis.url.shutdown>
+        
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>sourceforge-repo</id>
+            <properties>
+                <see.repository.url>http://sourceforge.net/projects/ddmore/files/install/SEE/${see.release.version}/</see.repository.url>
+                <test.projects.url>${see.repository.url}/resources/</test.projects.url>
+            </properties>
+        </profile>
+        <profile>
+            <id>jenkins-repo</id>
+            <properties>
+                <see.repository.url>file://${basedir}/../../SEE.INSTALLER.RESOLVER/env/dev/jenkins/resolver-64b.properties</see.repository.url>
+                <test.projects.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
+            </properties>
+        </profile>
+        <profile>
+            <!-- local repository, to use this profile put SEE plugin, MDL IDE Test Projects bundles and resolver properties file with
+            entries pointing to the bundles located in see.repository.url directory -->
+            <id>local-repo</id>
+            <properties>
+                <see.repository.url>file://C:/local-see-repo</see.repository.url>
+                <test.projects.url>${see.repository.url}</test.projects.url>
+            </properties>
+        </profile>
+        <profile>
+            <id>build-see</id>
+            <activation>
+                <file>
+                    <missing>target/SEE</missing>
+                </file>
+            </activation>
+            <properties>
+                <see.installer.dir.name>see-installer</see.installer.dir.name>
+                <see.installer.home>${project.build.directory}/${see.installer.dir.name}</see.installer.home>
+                <see.installer.batch>see.bat</see.installer.batch>
+    <see.installer.params><![CDATA[ build -with nonmem,!mdl-ide -in ${see.home} -repository ${see.repository.url} ]]></see.installer.params>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>wagon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-binary-NONMEM</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${see.repository.url}</url>
+                                    <fromFile>${see.installer.archive.name}</fromFile>
+                                    <toFile>${project.build.directory}/${see.installer.archive.name}</toFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unzip-downloaded-see-installer</id>
+                                <phase>process-sources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Unzipping ${see.installer.archive.name}" />
+                                        <unzip
+                                            src="${project.build.directory}/${see.installer.archive.name}"
+                                            dest="${project.build.directory}" />
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>run-see-installer</id>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Running SEE installer in ${see.installer.home}" />
+                                        <echo
+                                            message="${see.installer.batch} ${see.installer.params}" />
+                                        <exec executable="cmd"
+                                            dir="${see.installer.home}"
+                                            failonerror="true">
+                                            <arg value="/c" />
+                                            <arg
+                                                value="${see.installer.batch} ${see.installer.params}" />
+                                        </exec>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>prepare-test-projects</id>
+            <activation>
+                <file>
+                    <missing>target/test-projects</missing>
+                </file>
+            </activation>
+            <properties>
+                <test.projects.dir.name>test-projects</test.projects.dir.name>
+                <test.projects.home>${project.build.directory}/${test.projects.dir.name}</test.projects.home>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>wagon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-test-projects</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${test.projects.url}</url>
+                                    <fromFile>${test.projects.archive.name}</fromFile>
+                                    <toFile>${project.build.directory}/${test.projects.archive.name}</toFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unzip-downloaded-test-projects</id>
+                                <phase>generate-test-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Unzipping ${test.projects.archive.name}" />
+                                        <unzip
+                                            src="${project.build.directory}/${test.projects.archive.name}"
+                                            dest="${test.projects.home}" />
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>nonmem</id>
+            <activation>
+                <file>
+                    <missing>target/SEE/nm_7.3.0_g/license/nonmem.lic</missing>
+                </file>
+            </activation>
+            <properties>
+                <nonmem.license.name>nonmem.lic</nonmem.license.name>
+                <see.nonmem.license.location>${project.build.directory}/SEE/nm_7.3.0_g/license/${nonmem.license.name}</see.nonmem.license.location>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>wagon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-nonmem-license</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>file://${basedir}/${license.repository.url}/nonmem</url>
+                                    <fromFile>${nonmem.license.name}</fromFile>
+                                    <toFile>${see.nonmem.license.location}</toFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+            <version>1.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>11.0.2</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.3.6</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-see-thirdparty-tools-licenses-repository-exists</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireFilesExist>
+                                    <files>
+                                        <file>${license.repository.url}</file>
+                                    </files>
+                                    <message><![CDATA[ SEE Third-Party Tools' license repository doesn't exist ${license.repository.url}.]]></message>
+                                </requireFilesExist>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.18.1</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+        </plugin>
+    
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>expand-templates</id>
+                    <phase>process-test-resources</phase>
+                    <configuration>
+                        <target name="expand-templates">
+                            <taskdef name="groovy"
+                                classname="org.codehaus.groovy.ant.Groovy" />
+                            <groovy><![CDATA[ evaluate(new File("./src/test/java/eu/ddmore/see/tel/ExpandTemplates.groovy")) ]]></groovy>
+                        </target>
+                    </configuration>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>modify-temp-used-by-see</id>
+                    <phase>pre-integration-test</phase>
+                    <configuration>
+                        <target name="modify-temp-used-by-see">
+                            <mkdir dir="${project.build.directory}/temp" />
+                            <echo
+                                file="${see.home}/modify-temp-used-by-see-see-env-setup.bat"><![CDATA[
+                                    SET TEMP=${project.build.directory}\temp
+                                    ]]></echo>
+                        </target>
+                    </configuration>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>startup-see-services</id>
+                    <phase>pre-integration-test</phase>
+                    <configuration>
+                        <target>
+                            <echo message="Starting up SEE services" />
+                            <exec executable="cmd" dir="${see.home}"
+                                failonerror="true">
+                                <arg value="/c" />
+                                <arg value="startup.bat" />
+                            </exec>
+                            <echo
+                                message="Waiting 20 more seconds for background services to come up..." />
+                            <!-- This is not strictly necessary but we don't 
+                                want the first test to poll for the background services to come up -->
+                            <sleep seconds="20" />
+                        </target>
+                    </configuration>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>stop-see-services</id>
+                    <phase>post-integration-test</phase>
+                    <configuration>
+                        <target name="stop-see-services">
+                            <taskdef name="groovy"
+                                classname="org.codehaus.groovy.ant.Groovy" />
+                            <groovy><![CDATA[
+                                        import org.apache.http.HttpResponse
+                                        import org.apache.http.client.methods.HttpPost;
+                                        import org.apache.http.impl.client.CloseableHttpClient;
+                                        import org.apache.http.impl.client.HttpClients;
+                                        import org.apache.http.entity.ContentType;
+    
+                                        CloseableHttpClient client = HttpClients.createDefault()
+                                        try {
+                                            HttpPost post = new HttpPost("${see.fis.url.shutdown}");
+                                            post.addHeader("accept",
+                                            ContentType.WILDCARD.getMimeType());
+                                            HttpResponse response =
+                                            client.execute(post);
+                                            if(response.getStatusLine().getStatusCode()!=200)
+                                        {
+                                            throw new IllegalStateException("FIS failed to stop, response was ${response}")
+                                        }
+                                        } finally {
+                                            client.close()
+                                        }
+                                    ]]></groovy>
+                        </target>
+                    </configuration>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </execution>
+    
+            </executions>
+            <dependencies>
+                <dependency>
+                    <groupId>org.codehaus.groovy</groupId>
+                    <artifactId>groovy-all</artifactId>
+                    <version>2.1.5</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                    <version>4.3.6</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                    <version>4.3.3</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpmime</artifactId>
+                    <version>4.3.6</version>
+                </dependency>
+                <dependency>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
+                    <version>2.4</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>**/*AT.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <!--This plugin's configuration is used to store Eclipse 
+                    m2e settings only. It has no influence on the Maven build itself. -->
+                <plugin>
+                    <groupId>org.eclipse.m2e</groupId>
+                    <artifactId>lifecycle-mapping</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <lifecycleMappingMetadata>
+                            <pluginExecutions>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>
+                                            org.codehaus.mojo
+                                        </groupId>
+                                        <artifactId>
+                                            wagon-maven-plugin
+                                        </artifactId>
+                                        <versionRange>
+                                            [1.0,)
+                                        </versionRange>
+                                        <goals>
+                                            <goal>download-single</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>
+                                            org.apache.maven.plugins
+                                        </groupId>
+                                        <artifactId>
+                                            maven-antrun-plugin
+                                        </artifactId>
+                                        <versionRange>
+                                            [1.3,)
+                                        </versionRange>
+                                        <goals>
+                                            <goal>run</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                            </pluginExecutions>
+                        </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>wagon-maven-plugin</artifactId>
+                    <version>1.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.6</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>1.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.17</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <url>http://ddmore.eu</url>
+    <description>Acceptance Tests Harness for Standalone Execution Environment.</description>
+    <organization>
+        <name>Mango Solutions</name>
+        <url>http://www.mango-solutions.com</url>
+    </organization>
+    <inceptionYear>2015</inceptionYear>
+
+    <scm>
+        <url>http://sourceforge.net/p/ddmore/SEE/ci/master/tree/</url>
+        <connection>scm:git:git://git.code.sf.net/p/ddmore/SEE</connection>
+        <developerConnection>scm:git:ssh://git.code.sf.net/p/ddmore/SEE</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+    <name>Standalone Execution Environment Acceptance Tests</name>
+</project>

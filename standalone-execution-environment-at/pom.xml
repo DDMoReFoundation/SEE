@@ -39,6 +39,7 @@
             <properties>
                 <see.repository.url>http://sourceforge.net/projects/ddmore/files/install/SEE/${see.release.version}/</see.repository.url>
                 <test.projects.url>${see.repository.url}/resources/</test.projects.url>
+                <see.installer.url>${see.repository.url}</see.installer.url>
             </properties>
         </profile>
         <profile>
@@ -46,6 +47,7 @@
             <properties>
                 <see.repository.url>file://${basedir}/../../SEE.INSTALLER.RESOLVER/env/dev/jenkins/</see.repository.url>
                 <test.projects.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
+                <see.installer.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-SEE_Installer/lastSuccessfulBuild/artifact/see-installer-builder/target/</see.installer.url>
             </properties>
         </profile>
         <profile>
@@ -55,6 +57,7 @@
             <properties>
                 <see.repository.url>file://C:/local-see-repo</see.repository.url>
                 <test.projects.url>${see.repository.url}</test.projects.url>
+                <see.installer.url>${see.repository.url}</see.installer.url>
             </properties>
         </profile>
         <profile>
@@ -83,7 +86,7 @@
                                     <goal>download-single</goal>
                                 </goals>
                                 <configuration>
-                                    <url>${see.repository.url}</url>
+                                    <url>${see.installer.url}</url>
                                     <fromFile>${see.installer.archive.name}</fromFile>
                                     <toFile>${project.build.directory}/${see.installer.archive.name}</toFile>
                                 </configuration>

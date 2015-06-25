@@ -44,7 +44,7 @@
         <profile>
             <id>jenkins-repo</id>
             <properties>
-                <see.repository.url>file://${basedir}/../../SEE.INSTALLER.RESOLVER/env/dev/jenkins/resolver-64b.properties</see.repository.url>
+                <see.repository.url>file://${basedir}/../../SEE.INSTALLER.RESOLVER/env/dev/jenkins/</see.repository.url>
                 <test.projects.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
             </properties>
         </profile>

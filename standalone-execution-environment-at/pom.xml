@@ -71,7 +71,7 @@
                 <see.installer.dir.name>see-installer</see.installer.dir.name>
                 <see.installer.home>${project.build.directory}/${see.installer.dir.name}</see.installer.home>
                 <see.installer.batch>see.bat</see.installer.batch>
-    <see.installer.params><![CDATA[ build -with nonmem,!mdl-ide -in ${see.home} -repository ${see.repository.url} ]]></see.installer.params>
+                <see.installer.params><![CDATA[ build -with nonmem,!mdl-ide -in ${see.home} -repository ${see.repository.url} ]]></see.installer.params>
             </properties>
             <build>
                 <plugins>

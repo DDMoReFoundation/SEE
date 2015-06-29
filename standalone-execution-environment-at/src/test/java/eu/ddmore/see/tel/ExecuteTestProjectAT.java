@@ -26,11 +26,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
@@ -159,8 +161,10 @@ public class ExecuteTestProjectAT {
      * * there might be interrelations between test projects (e.g. utils script in TestUtils project is sourced by the test scripts)
      * * each Test Script may modify any files
      * 
-     * Parent directory of the testScript is treated as MDL IDE workspace and copied to a directory specific to a given Test Script and
+     * Parent directory of the test project is treated as MDL IDE workspace and copied to a directory specific to a given Test Script execution and
      * then the Test Script is executed. This ensures that each Test Script runs in unmodified workspace.
+     * 
+     * The test is considered successful if it completes without exception.
      */
     @Test
     public void shouldSuccessfulyExecuteTestScript() throws Exception {
@@ -168,7 +172,19 @@ public class ExecuteTestProjectAT {
         File testScriptPath = new File(new File(workingDirectory, testProject.getName()),testScript.getPath());
         File wrapperScript = new File(testScriptPath.getParentFile(), testFileName("R"));
         prepareScriptWrapper(testScriptPath, wrapperScript, workingDirectory);
-        new TestScriptPerformer().run(rBinary, wrapperScript, workingDirectory);
+        LOG.info(StringUtils.repeat("#", 60));
+        LOG.info(String.format("Working Directory [%s]",workingDirectory));
+        LOG.info(String.format("Test Project [%s]",testProject.getName()));
+        LOG.info(String.format("Test Script [%s]",testScriptPath));
+        LOG.info(String.format("Wrapper Script [%s]",wrapperScript));
+        LOG.info(StringUtils.repeat("#", 60));
+        try {
+            new TestScriptPerformer().run(rBinary, wrapperScript, workingDirectory);
+        } finally {
+            LOG.info(StringUtils.repeat("#", 60));
+            LOG.info(String.format("Test Script Execution [%s] END",testScriptPath));
+            LOG.info(StringUtils.repeat("#", 60));
+        }
     }
 
     private File prepareWorkspace(File testProject, File testScript) throws IOException {
@@ -266,6 +282,7 @@ public class ExecuteTestProjectAT {
         private static final String STDERR = ".stderr";
         private static final String R_TMP_DIRECTORY_SUFIX = ".Rtmp";
         private static final String R_TMP_DIR_ENV_VARIABLE = "TMPDIR";
+        private static Long PROCESS_TIMEOUT = TimeUnit.MINUTES.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
 
         public void run(File rscriptExecutable, File scriptPath, File workingDirectory) throws Exception {
             CommandLine cmdLine = new CommandLine(rscriptExecutable);
@@ -291,11 +308,13 @@ public class ExecuteTestProjectAT {
                     executor.setStreamHandler(pumpStreamHandler);
                     StopWatch stopWatch = new StopWatch();
                     stopWatch.start();
+                    DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
                     try {
                         if(DRY_RUN) {
                             LOG.debug("Skipping test script execution.");
                         } else {
-                            executor.execute(cmdLine, env);
+                            executor.execute(cmdLine, env, resultHandler);
+                            monitorProgress(executor, resultHandler);
                         }
                     } finally {
                         stopWatch.stop();
@@ -305,14 +324,55 @@ public class ExecuteTestProjectAT {
                 }
                 
             } catch(Exception e) {
-                throw new Exception(String.format("Error when executing %s.\n STDOUT: [%s]\n STDERR: [%s] ", scriptPath, FileUtils.readFileToString(stdoutFile), FileUtils.readFileToString(stderrFile)));
+                throw new Exception(String.format("Error when executing %s.\n STDOUT: [%s]\n STDERR: [%s] ", scriptPath, FileUtils.readFileToString(stdoutFile), FileUtils.readFileToString(stderrFile)),e);
+            }
+        }
+        /**
+         * This method performs monitoring of the external process. Since WatchDog can't be relied on this method actively polls
+         * for running process and enforces process destruction if timeout is reached.
+         * This approach is even suggested by https://commons.apache.org/proper/commons-exec/apidocs/org/apache/commons/exec/ExecuteWatchdog.html
+         * @param externalProcessInput 
+         */
+        private void monitorProgress(DefaultExecutor executor, DefaultExecuteResultHandler resultHandler) throws Exception {
+            boolean monitor = true;
+            long waitedSoFar = 0l;
+            long step = TimeUnit.SECONDS.toMillis(20);
+            while(monitor) {
+                waitedSoFar+=step;
+                resultHandler.waitFor(step);
+                if(resultHandler.hasResult()) {
+                    break;
+                }
+                if(waitedSoFar>PROCESS_TIMEOUT) {
+                    LOG.error("Attempting to destroy external process...");
+                    /* We invoke destroyProcess method, but this is not guaranteed to work and sometimes results in a detachment from the external process.
+                     * There is also no easy way of sending SIGING signal to an external process on Windows platform hence we can't guarantee that
+                     * the external process actually stops.
+                     * 
+                     * Here we can only give some time to an external process to shut down. We accept this resource leak just because
+                     * in this particular case even if the Rscript being run was killed underlying NONMEM execution would still run anyway
+                     * (since DDMoRe connectors do not support cancellation).
+                     */
+                    executor.getWatchdog().destroyProcess();
+                    if(waitedSoFar>(PROCESS_TIMEOUT+step)) {
+                        monitor = false;
+                        LOG.error("The external process did not stop.");
+                    }
+                }
+            }
+            if(executor.getWatchdog().killedProcess()) {
+                throw new IllegalStateException("The process timed out.");
+            } else {
+                if(executor.isFailure(resultHandler.getExitValue())) {
+                    throw new Exception("External process exited with non-zero exit value.");
+                }
             }
         }
         
         private DefaultExecutor createCommandExecutor() {
             DefaultExecutor executor = new DefaultExecutor();
             executor.setExitValue(0);
-            ExecuteWatchdog watchdog = new ExecuteWatchdog(TimeUnit.MINUTES.toMillis(Long.parseLong(System.getProperty("testscript.timeout"))));
+            ExecuteWatchdog watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
             executor.setWatchdog(watchdog);
             return executor;
         }

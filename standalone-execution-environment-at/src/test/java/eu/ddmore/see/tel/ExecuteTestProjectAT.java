@@ -35,7 +35,6 @@ import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -47,17 +46,18 @@ import com.google.common.collect.Maps;
 
 
 /**
- * A Parametrized test case that executes all test scripts named *TestScript.R in MDL IDE test projects. 
- * 
+ * A Parameterized test case that executes all test scripts named *TestScript.R in MDL IDE test projects. 
+ * <p>
  * The verification and assertions are implemented by the Test Scripts themselves which are expected to result in R 'stop' function call 
  * in case of script's failure.
- * 
+ * <p>
  * The test harness ensures that:
- *   * the standard output and error streams from Test Script execution are dumped into files
- *   * the test case fails if the Test Script fails
- *   * R workspace image is dumped to a file
- *   * R working directory is located in the Test Scripts location
- * 
+ * <ol>
+ *   <li>the standard output and error streams from Test Script execution are dumped into files</li>
+ *   <li>the test case fails if the Test Script fails</li>
+ *   <li>R workspace image is dumped to a file</li>
+ *   <li>R working directory is located in the Test Scripts location</li>
+ * </ol>
  * This Test Harness supports both - execution from Maven and from IDE but the latter requires that at least Maven's 'pre-integration-test' phase 
  * has been executed first.
  * 
@@ -92,8 +92,6 @@ public class ExecuteTestProjectAT {
         PrintDebugAndSucceed
     }
     
-    
-    @BeforeClass
     public static void setUp() throws Exception {
         Properties properties = new Properties();
         properties.load(ExecuteTestProjectAT.class.getResourceAsStream("/test.properties"));
@@ -158,8 +156,10 @@ public class ExecuteTestProjectAT {
     
     /**
      * Since:
-     * * there might be interrelations between test projects (e.g. utils script in TestUtils project is sourced by the test scripts)
-     * * each Test Script may modify any files
+     * <ol>
+     *   <li>there might be interrelations between test projects (e.g. utils script in TestUtils project is sourced by the test scripts)</li>
+     *   <li>each Test Script may modify any files</li>
+     * </ol>
      * 
      * Parent directory of the test project is treated as MDL IDE workspace and copied to a directory specific to a given Test Script execution and
      * then the Test Script is executed. This ensures that each Test Script runs in unmodified workspace.
@@ -280,7 +280,7 @@ public class ExecuteTestProjectAT {
     private static class TestScriptPerformer {
         private static final String STDOUT = ".stdout";
         private static final String STDERR = ".stderr";
-        private static final String R_TMP_DIRECTORY_SUFIX = ".Rtmp";
+        private static final String R_TMP_DIRECTORY_SUFFIX = ".Rtmp";
         private static final String R_TMP_DIR_ENV_VARIABLE = "TMPDIR";
         private static Long PROCESS_TIMEOUT = TimeUnit.MINUTES.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
 
@@ -294,7 +294,7 @@ public class ExecuteTestProjectAT {
             DefaultExecutor executor = createCommandExecutor();
             executor.setWorkingDirectory(workingDirectory);
             Path relativeScriptLocation = workingDirectory.toPath().relativize(scriptPath.toPath());
-            File tmpDir = new File(workingDirectory, relativeScriptLocation.toString() + R_TMP_DIRECTORY_SUFIX);
+            File tmpDir = new File(workingDirectory, relativeScriptLocation.toString() + R_TMP_DIRECTORY_SUFFIX);
             if(!tmpDir.exists()) {
                 Preconditions.checkState(tmpDir.mkdirs(), String.format("Could not create R tmp directory %s.", tmpDir));
             }
@@ -346,7 +346,7 @@ public class ExecuteTestProjectAT {
                 if(waitedSoFar>PROCESS_TIMEOUT) {
                     LOG.error("Attempting to destroy external process...");
                     /* We invoke destroyProcess method, but this is not guaranteed to work and sometimes results in a detachment from the external process.
-                     * There is also no easy way of sending SIGING signal to an external process on Windows platform hence we can't guarantee that
+                     * There is also no easy way of sending SIGINT signal to an external process on Windows platform hence we can't guarantee that
                      * the external process actually stops.
                      * 
                      * Here we can only give some time to an external process to shut down. We accept this resource leak just because

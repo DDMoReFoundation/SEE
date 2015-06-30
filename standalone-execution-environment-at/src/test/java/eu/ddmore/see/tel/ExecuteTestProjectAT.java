@@ -67,10 +67,12 @@ public class ExecuteTestProjectAT {
     private final static Logger LOG = Logger.getLogger(ExecuteTestProjectAT.class);
     private final File testProject;
     private final File testScript;
-    private static final String testScriptPattern = "regex:^(?!(test-)).*TestScript\\.[Rr]";
+    private static final String testScriptPattern = "regex:.*TestScript\\.[Rr]";
     private File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
     private File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
     private File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
+    private static String includeTestScriptPattern = null;
+    private static String excludeTestScriptPattern = null;
     
     /*
     * Attributes controlling test harness behaviour
@@ -103,6 +105,9 @@ public class ExecuteTestProjectAT {
         }
         TEST_SCRIPT_MODE = TestScriptMode.valueOf(System.getProperty("testScriptMode"));
         DRY_RUN = Boolean.parseBoolean(System.getProperty("dryRun"));
+
+        includeTestScriptPattern = System.getProperty("includeTestScriptPattern");
+        excludeTestScriptPattern = System.getProperty("excludeTestScriptPattern");
     }
 
     /**
@@ -138,7 +143,7 @@ public class ExecuteTestProjectAT {
         Preconditions.checkNotNull(testProjects, String.format("No test projects found in %s", testProjectsLocation));
         Map<File, Set<Path>> projectsAndFiles = Maps.newHashMap();
         for(File testProject : testProjects){
-            TestScriptFinder testScriptFinder = new TestScriptFinder(testScriptPattern);
+            TestScriptFinder testScriptFinder = new TestScriptFinder(testScriptPattern, includeTestScriptPattern, excludeTestScriptPattern);
             Files.walkFileTree(testProject.getAbsoluteFile().toPath(), testScriptFinder);
             projectsAndFiles.put(testProject, testScriptFinder.getScripts());
         }
@@ -244,15 +249,23 @@ public class ExecuteTestProjectAT {
      */
     private static class TestScriptFinder extends SimpleFileVisitor<Path> {
         private final PathMatcher matcher;
+        private final PathMatcher includeMatcher;
+        private final PathMatcher excludeMatcher;
         private final Set<Path> scripts = new HashSet<>();
-        TestScriptFinder(String pattern) {
+        TestScriptFinder(String pattern, String includeTestScriptPattern, String excludeTestScriptPattern) {
             matcher = FileSystems.getDefault().getPathMatcher(pattern);
+            includeMatcher = FileSystems.getDefault().getPathMatcher(includeTestScriptPattern);
+            excludeMatcher = FileSystems.getDefault().getPathMatcher(excludeTestScriptPattern);
         }
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             if (matcher.matches(file.getFileName())) {
-                scripts.add(file);
+                if(includeMatcher.matches(file.getFileName())&&!excludeMatcher.matches(file.getFileName())) {
+                    scripts.add(file);
+                } else {
+                    LOG.debug(String.format("Path %s was explicitly ignored by include/exclude mechanism.", file.getFileName(), matcher));
+                }
             } else {
                 LOG.trace(String.format("Path %s didn't match %s", file.getFileName(), matcher));
             }

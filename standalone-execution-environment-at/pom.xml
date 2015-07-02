@@ -7,13 +7,13 @@
     <groupId>eu.ddmore</groupId>
     <artifactId>standalone-execution-environment-at</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
     <properties>
         <!-- Change the below to appropriate 'Product x' release -->
         <see.release.version>${project.version}</see.release.version>
         <see.home>${project.build.directory}/SEE</see.home>
         <!-- downloaded binaries names - installer and test projects bundle -->
-        <test.projects.archive.name>mdl-ide-test-projects-1.1.0-SNAPSHOT-projects.zip</test.projects.archive.name>
+        <test.projects.archive.name>mdl-ide-test-projects-1.1.0-projects.zip</test.projects.archive.name>
         <see.installer.archive.name>see-installer-64b.zip</see.installer.archive.name>
         <!-- 
         Where TPT licenses should be acquired from, this directory structure is:

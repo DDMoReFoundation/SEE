@@ -13,7 +13,7 @@
         <see.release.version>${project.version}</see.release.version>
         <see.home>${project.build.directory}/SEE</see.home>
         <!-- downloaded binaries names - installer and test projects bundle -->
-        <test.projects.archive.name>mdl-ide-test-projects-1.1.0-SNAPSHOT-projects.zip</test.projects.archive.name>
+        <test.projects.archive.name>mdl-ide-test-projects-1.2.0-SNAPSHOT-projects.zip</test.projects.archive.name>
         <see.installer.archive.name>see-installer-64b.zip</see.installer.archive.name>
         <!-- 
         Where TPT licenses should be acquired from, this directory structure is:

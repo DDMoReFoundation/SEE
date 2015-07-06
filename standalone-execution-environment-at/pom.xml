@@ -46,8 +46,8 @@
             <id>jenkins-repo</id>
             <properties>
                 <see.repository.url>file://${basedir}/../../SEE.INSTALLER.RESOLVER/env/dev/jenkins/</see.repository.url>
-                <test.projects.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
-                <see.installer.url>http://cismaster/jenkins/view/DDMoRe-Apps/job/DDMoRe-SEE_Installer/lastSuccessfulBuild/artifact/see-installer-builder/target/</see.installer.url>
+                <test.projects.url>http://cismaster/jenkins/view/DDMoRe%20Demonstrator%201.1.0%20Release/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle_Demonstrator_1.1.0_Release/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
+                <see.installer.url>http://cismaster/jenkins/view/DDMoRe%20Demonstrator%201.1.0%20Release/job/DDMoRe-SEE_Installer_Demonstrator_1.1.0_Release/lastSuccessfulBuild/artifact/see-installer-builder/target/</see.installer.url>
             </properties>
         </profile>
         <profile>

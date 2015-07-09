@@ -31,9 +31,32 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
+        <tests.includeTestScriptPattern>regex:.+</tests.includeTestScriptPattern>
+        <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
     </properties>
 
     <profiles>
+        <profile>
+            <id>quick-models</id>
+            <properties>
+                <tests.includeTestScriptPattern>regex:.+TestScript\.R</tests.includeTestScriptPattern>
+                <tests.excludeTestScriptPattern>regex:.*(PsN|Simulix|Monolix|UseCase4|UseCase17|UseCase1_(([N8]))|UseCase(([\d]{2})|([2-9]))_[\d]+|UseCase5_[\D]|UseCase11_[\D]).*</tests.excludeTestScriptPattern>
+            </properties>
+        </profile>
+        <profile>
+            <id>long-models</id>
+            <properties>
+                <tests.includeTestScriptPattern>regex:.*(UseCase1_8|UseCase1_N|UseCase10_1|UseCase13_1|UseCase17|UseCase4|UseCase11_|UseCase12_|UseCase14_[\d]|UseCase2_|UseCase4_|UseCase5|UseCase8_[\d]).*TestScript\.R</tests.includeTestScriptPattern>
+                <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+            </properties>
+        </profile>
+        <profile>
+            <id>minimum-models</id>
+            <properties>
+                <tests.includeTestScriptPattern>regex:.*(UPDRS1|Inverse_binomial|Poisson|Friberg|UseCase1_FOCEI|UseCase2_1).*</tests.includeTestScriptPattern>
+                <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+            </properties>
+        </profile>
         <profile>
             <id>sourceforge-repo</id>
             <properties>
@@ -444,6 +467,10 @@
                     <includes>
                         <include>**/*AT.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <includeTestScriptPattern>${tests.includeTestScriptPattern}</includeTestScriptPattern>
+                        <excludeTestScriptPattern>${tests.excludeTestScriptPattern}</excludeTestScriptPattern>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

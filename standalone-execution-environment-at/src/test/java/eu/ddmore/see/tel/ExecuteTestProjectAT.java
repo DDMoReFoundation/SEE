@@ -144,6 +144,8 @@ public class ExecuteTestProjectAT {
         Map<File, Set<Path>> projectsAndFiles = Maps.newHashMap();
         for(File testProject : testProjects){
             TestScriptFinder testScriptFinder = new TestScriptFinder(testScriptPattern, includeTestScriptPattern, excludeTestScriptPattern);
+            LOG.debug(String.format("Test Script include pattern : [%s]", includeTestScriptPattern));
+            LOG.debug(String.format("Test Script exclude pattern : [%s]", excludeTestScriptPattern));
             Files.walkFileTree(testProject.getAbsoluteFile().toPath(), testScriptFinder);
             projectsAndFiles.put(testProject, testScriptFinder.getScripts());
         }
@@ -262,9 +264,10 @@ public class ExecuteTestProjectAT {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             if (matcher.matches(file.getFileName())) {
                 if(includeMatcher.matches(file.getFileName())&&!excludeMatcher.matches(file.getFileName())) {
+                    LOG.debug(String.format("Found test script %s.", file.getFileName()));
                     scripts.add(file);
                 } else {
-                    LOG.debug(String.format("Path %s was explicitly ignored by include/exclude mechanism.", file.getFileName(), matcher));
+                    LOG.trace(String.format("Path %s was explicitly ignored by include/exclude mechanism.", file.getFileName(), matcher));
                 }
             } else {
                 LOG.trace(String.format("Path %s didn't match %s", file.getFileName(), matcher));

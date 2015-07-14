@@ -37,25 +37,40 @@
 
     <profiles>
         <profile>
-            <id>quick-models</id>
+            <!-- set of Test Scripts for which estimation takes short time -->
+            <id>fast</id>
             <properties>
                 <tests.includeTestScriptPattern>regex:.+TestScript\.R</tests.includeTestScriptPattern>
                 <tests.excludeTestScriptPattern>regex:.*(PsN|Simulix|Monolix|UseCase4|UseCase17|UseCase1_(([N8]))|UseCase(([\d]{2})|([2-9]))_[\d]+|UseCase5_[\D]|UseCase11_[\D]).*</tests.excludeTestScriptPattern>
             </properties>
         </profile>
         <profile>
-            <id>long-models</id>
+            <!-- set of Test Scripts for which estimation takes short time -->
+            <id>slow</id>
             <properties>
                 <tests.includeTestScriptPattern>regex:.*(UseCase1_8|UseCase1_N|UseCase10_1|UseCase13_1|UseCase17|UseCase4|UseCase11_|UseCase12_|UseCase14_[\d]|UseCase2_|UseCase4_|UseCase5|UseCase8_[\d]).*TestScript\.R</tests.includeTestScriptPattern>
                 <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
             </properties>
         </profile>
         <profile>
-            <id>minimum-models</id>
+            <!-- Minimum set of test scripts that is required for software acceptance -->
+            <id>acceptance</id>
             <properties>
                 <tests.includeTestScriptPattern>regex:.*(UPDRS1|Inverse_binomial|Poisson|Friberg|UseCase1_FOCEI|UseCase2_1).*</tests.includeTestScriptPattern>
                 <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
             </properties>
+        </profile>
+        <profile>
+            <!-- Just PsN test scripts -->
+            <id>psn</id>
+            <properties>
+                <tests.includeTestScriptPattern>regex:.*(PsN).*</tests.includeTestScriptPattern>
+                <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+            </properties>
+        </profile>
+        <profile>
+            <!-- runs all test scripts -->
+            <id>all</id>
         </profile>
         <profile>
             <id>sourceforge-repo</id>
@@ -69,8 +84,8 @@
             <id>jenkins-repo</id>
             <properties>
                 <see.repository.url>file://${basedir}/../../SEE.INSTALLER.RESOLVER/env/dev/jenkins/</see.repository.url>
-                <test.projects.url>http://cismaster/jenkins/view/DDMoRe%20Demonstrator%201.1.0%20Release/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle_Demonstrator_1.1.0_Release/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
-                <see.installer.url>http://cismaster/jenkins/view/DDMoRe%20Demonstrator%201.1.0%20Release/job/DDMoRe-SEE_Installer_Demonstrator_1.1.0_Release/lastSuccessfulBuild/artifact/see-installer-builder/target/</see.installer.url>
+                <test.projects.url>http://cismaster/jenkins/job/DDMoRe-MDL_IDE_Acceptance_Test_Projects_Bundle/lastSuccessfulBuild/artifact/Demonstrator/mdl-ide-test-projects/target/</test.projects.url>
+                <see.installer.url>http://cismaster/jenkins/job/DDMoRe-SEE_Installer/lastSuccessfulBuild/artifact/see-installer-builder/target/</see.installer.url>
             </properties>
         </profile>
         <profile>

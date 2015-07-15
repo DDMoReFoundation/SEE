@@ -68,6 +68,7 @@ public class ExecuteTestProjectAT {
     private final File testProject;
     private final File testScript;
     private static final String testScriptPattern = "regex:.*TestScript\\.[Rr]";
+    private static final String TEST_SCRIPT_WRAPPER_TEMPLATE = "/TestScriptWrapperTemplate.template";
     private File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
     private File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
     private File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
@@ -207,22 +208,13 @@ public class ExecuteTestProjectAT {
     }
 
     private void prepareScriptWrapper(File scriptPath, File scriptWrapper, File workingDirectory) throws IOException {
-        StringBuilder testScriptWrapper = new StringBuilder();
-        testScriptWrapper.append(String.format(".MDLIDE_WORKSPACE_PATH='%s'\n", toRPath(workingDirectory)))
-                    .append(String.format("setwd('%s')\n", toRPath(seeHome)))
-                    .append("source('ConfigureTelConsole.R')\n")
-                    .append("setwd(.MDLIDE_WORKSPACE_PATH)\n")
-                    .append(".seeAtResult<- tryCatch({\n")
-                    .append(generateTestScript(scriptPath))
-                    // 0 - this indicates success
-                    .append("\n0\n}, finally = {\n") 
-                    // create R workspace image file
-                    .append(String.format("\nsave.image(file='%s/%s')\n", toRPath(scriptPath.getParentFile()), testFileName("RData")))
-                    // return 100 to indicate failure in case of error
-                    .append("\n}, error = function(err) { traceback()\nprint(err)\n return(100)} )\n")
-                    //quit, don't create a workspace image and don't use TEL.R's quit but the base implementation, so SEE services are not shut down
-                    .append("base::q('no',.seeAtResult,FALSE)"); 
-        FileUtils.writeStringToFile(scriptWrapper, testScriptWrapper.toString());
+        String template = FileUtils.readFileToString(FileUtils.toFile(ExecuteTestProjectAT.class.getResource(TEST_SCRIPT_WRAPPER_TEMPLATE)));
+        template = template
+        .replaceAll("<MDLIDE_WORKSPACE_PATH>",toRPath(workingDirectory))
+        .replaceAll("<SEE_HOME>",toRPath(seeHome))
+        .replaceAll("<TEST_SCRIPT>",generateTestScript(scriptPath))
+        .replaceAll("<R_DATA_FILE>", String.format("%s/%s", toRPath(scriptPath.getParentFile()), testFileName("RData")));
+        FileUtils.writeStringToFile(scriptWrapper, template);
     }
 
     private static String testFileName(String extension) {

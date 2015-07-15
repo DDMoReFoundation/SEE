@@ -1,0 +1,21 @@
+.MDLIDE_WORKSPACE_PATH='<MDLIDE_WORKSPACE_PATH>'
+setwd('<SEE_HOME>')
+source('ConfigureTelConsole.R')
+setwd(.MDLIDE_WORKSPACE_PATH)
+.seeAtResult<- tryCatch({
+
+<TEST_SCRIPT>
+
+#0 - this indicates success
+0
+}, finally = {
+#create R workspace image file
+save.image(file='<R_DATA_FILE>')
+}, error = function(err) { 
+traceback()
+print(err)
+#return 100 to indicate failure in case of error
+return(100)
+})
+#quit, don't create a workspace image and don't use TEL.R's quit but the base implementation, so SEE services are not shut down
+base::q('no',.seeAtResult,FALSE)

@@ -69,6 +69,9 @@ public class ExecuteTestProjectAT {
     private final File testScript;
     private static final String testScriptPattern = "regex:.*TestScript\\.[Rr]";
     private static final String TEST_SCRIPT_WRAPPER_TEMPLATE = "/TestScriptWrapperTemplate.template";
+    private static final String TEST_FILE = "test.R";
+    private static final String PID_FILE_EXT = "PID";
+    private static final String RDATA_FILE_EXT = "RData";
     private File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
     private File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
     private File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
@@ -178,7 +181,7 @@ public class ExecuteTestProjectAT {
     public void shouldSuccessfulyExecuteTestScript() throws Exception {
         File workingDirectory = prepareWorkspace(testProject, testScript);
         File testScriptPath = new File(new File(workingDirectory, testProject.getName()),testScript.getPath());
-        File wrapperScript = new File(testScriptPath.getParentFile(), testFileName("R"));
+        File wrapperScript = new File(testScriptPath.getParentFile(), TEST_FILE);
         prepareScriptWrapper(testScriptPath, wrapperScript, workingDirectory);
         LOG.info(StringUtils.repeat("#", 60));
         LOG.info(String.format("Working Directory [%s]",workingDirectory));
@@ -213,12 +216,13 @@ public class ExecuteTestProjectAT {
         .replaceAll("<MDLIDE_WORKSPACE_PATH>",toRPath(workingDirectory))
         .replaceAll("<SEE_HOME>",toRPath(seeHome))
         .replaceAll("<TEST_SCRIPT>",generateTestScript(scriptPath))
-        .replaceAll("<R_DATA_FILE>", String.format("%s/%s", toRPath(scriptPath.getParentFile()), testFileName("RData")));
+        .replaceAll("<PID_FILE>", String.format("%s/%s", toRPath(scriptPath.getParentFile()), metaFileName(PID_FILE_EXT)))
+        .replaceAll("<R_DATA_FILE>", String.format("%s/%s", toRPath(scriptPath.getParentFile()), metaFileName(RDATA_FILE_EXT)));
         FileUtils.writeStringToFile(scriptWrapper, template);
     }
 
-    private static String testFileName(String extension) {
-        return "test." + extension;
+    private static String metaFileName(String postfix) {
+        return TEST_FILE + "."+postfix;
     }
 
     private String generateTestScript(File scriptPath) {
@@ -286,11 +290,11 @@ public class ExecuteTestProjectAT {
      * Instances of this class are responsible for executing given R script in a given working directory in Rscript.exe binary
      */
     private static class TestScriptPerformer {
-        private static final String STDOUT = ".stdout";
-        private static final String STDERR = ".stderr";
+        private static final String STDOUT_FILE_EXT = "stdout";
+        private static final String STDERR_FILE_EXT = "stderr";
         private static final String R_TMP_DIRECTORY_SUFFIX = ".Rtmp";
         private static final String R_TMP_DIR_ENV_VARIABLE = "TMPDIR";
-        private static Long PROCESS_TIMEOUT = TimeUnit.MINUTES.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
+        private static Long PROCESS_TIMEOUT = TimeUnit.SECONDS.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
 
         public void run(File rscriptExecutable, File scriptPath, File workingDirectory) throws Exception {
             CommandLine cmdLine = new CommandLine(rscriptExecutable);
@@ -307,8 +311,9 @@ public class ExecuteTestProjectAT {
                 Preconditions.checkState(tmpDir.mkdirs(), String.format("Could not create R tmp directory %s.", tmpDir));
             }
             env.put(R_TMP_DIR_ENV_VARIABLE, tmpDir.getAbsolutePath());
-            File stdoutFile = new File(workingDirectory, relativeScriptLocation.toString() + STDOUT);
-            File stderrFile = new File(workingDirectory, relativeScriptLocation.toString()  + STDERR);
+            File stdoutFile = new File(workingDirectory, relativeScriptLocation.toString() + "." + STDOUT_FILE_EXT);
+            File stderrFile = new File(workingDirectory, relativeScriptLocation.toString() + "." + STDERR_FILE_EXT);
+            File pidFile = new File(workingDirectory, relativeScriptLocation.toString()  + "." + PID_FILE_EXT);
             try {
                 try (BufferedOutputStream stdoutOS = new BufferedOutputStream(new TeeOutputStream(new FileOutputStream(stdoutFile),System.out));
                         BufferedOutputStream stderrOS = new BufferedOutputStream(new TeeOutputStream(new FileOutputStream(stderrFile),System.err))) {
@@ -322,7 +327,7 @@ public class ExecuteTestProjectAT {
                             LOG.debug("Skipping test script execution.");
                         } else {
                             executor.execute(cmdLine, env, resultHandler);
-                            monitorProgress(executor, resultHandler);
+                            monitorProgress(executor, resultHandler, pidFile);
                         }
                     } finally {
                         stopWatch.stop();
@@ -339,9 +344,10 @@ public class ExecuteTestProjectAT {
          * This method performs monitoring of the external process. Since WatchDog can't be relied on this method actively polls
          * for running process and enforces process destruction if timeout is reached.
          * This approach is even suggested by https://commons.apache.org/proper/commons-exec/apidocs/org/apache/commons/exec/ExecuteWatchdog.html
+         * @param pidFile 
          * @param externalProcessInput 
          */
-        private void monitorProgress(DefaultExecutor executor, DefaultExecuteResultHandler resultHandler) throws Exception {
+        private void monitorProgress(DefaultExecutor executor, DefaultExecuteResultHandler resultHandler, File pidFile) throws Exception {
             boolean monitor = true;
             long waitedSoFar = 0l;
             long step = TimeUnit.SECONDS.toMillis(20);
@@ -364,7 +370,8 @@ public class ExecuteTestProjectAT {
                     executor.getWatchdog().destroyProcess();
                     if(waitedSoFar>(PROCESS_TIMEOUT+step)) {
                         monitor = false;
-                        LOG.error("The external process did not stop.");
+                        LOG.error("The external process did not stop using Commons Exec.");
+                        killProcess(pidFile);
                     }
                 }
             }
@@ -377,6 +384,24 @@ public class ExecuteTestProjectAT {
             }
         }
         
+        private void killProcess(File pidFile) {
+            String pid;
+            try {
+                pid = FileUtils.readFileToString(pidFile);
+            } catch (IOException e1) {
+                throw new RuntimeException(String.format("Could not read process PID file %s.",pidFile));
+            }
+            String killCommand = String.format("powershell Stop-Process %s",pid);
+            LOG.info(String.format("Attempting to kill process using command [%s].", killCommand));
+            try {
+                DefaultExecutor executor = createCommandExecutor();
+                int exitCode = executor.execute(CommandLine.parse(killCommand));
+                LOG.info(String.format("Kill command returned %s", exitCode));
+            } catch (Exception e) {
+                throw new RuntimeException(String.format("Could not stop process with PID [%s].",pid));
+            }
+            
+        }
         private DefaultExecutor createCommandExecutor() {
             DefaultExecutor executor = new DefaultExecutor();
             executor.setExitValue(0);

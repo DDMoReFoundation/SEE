@@ -294,7 +294,7 @@ public class ExecuteTestProjectAT {
         private static final String STDERR_FILE_EXT = "stderr";
         private static final String R_TMP_DIRECTORY_SUFFIX = ".Rtmp";
         private static final String R_TMP_DIR_ENV_VARIABLE = "TMPDIR";
-        private static Long PROCESS_TIMEOUT = TimeUnit.SECONDS.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
+        private static Long PROCESS_TIMEOUT = TimeUnit.MINUTES.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
 
         public void run(File rscriptExecutable, File scriptPath, File workingDirectory) throws Exception {
             CommandLine cmdLine = new CommandLine(rscriptExecutable);

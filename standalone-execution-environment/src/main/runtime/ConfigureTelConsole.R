@@ -43,8 +43,8 @@ library('xpose4')
 .printPluginInitSummary(.pluginInitStatus)
 
 # Start the FIS and MIF/TES servers
-DDMoRe.TEL:::TEL.startServer()
-
+DDMoRe.TEL:::TEL.setServer(createFISServer(startupScript=file.path(getwd(),"startup.bat")))
+DDMoRe.TEL:::TEL.startServer(DDMoRe.TEL:::TEL.getServer())
 
 # Housekeeping (clear workspace variables)
 ignore=list(".MDLIDE_WORKSPACE_PATH")

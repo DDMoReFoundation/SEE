@@ -45,7 +45,7 @@ if NOT ERRORLEVEL 0 (
 	exit 1
 )
 
-FOR /L %%i in (1,1,30) do (
+FOR /L %%i in (1,1,60) do (
 	if EXIST "%FIS_TRACE_FILE%" (
 		echo FIS is running
 		goto :startupServices

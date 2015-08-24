@@ -77,7 +77,7 @@
             <properties>
                 <see.repository.url>http://sourceforge.net/projects/ddmore/files/install/SEE/${see.release.version}/</see.repository.url>
                 <test.projects.url>${see.repository.url}/resources/</test.projects.url>
-                <see.installer.url>${see.repository.url}</see.installer.url>
+                <see.installer.url>${see.repository.url}/see-installer/</see.installer.url>
             </properties>
         </profile>
         <profile>
@@ -118,7 +118,7 @@
                         <artifactId>wagon-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>download-binary-NONMEM</id>
+                                <id>download-see-installer</id>
                                 <phase>generate-sources</phase>
                                 <goals>
                                     <goal>download-single</goal>

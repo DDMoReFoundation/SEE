@@ -25,6 +25,12 @@ IF EXIST !LOCAL_JAVA_HOME! (
 ) else (
 	echo JRE installed in the environment will be used.
 )
+:setupJavaOptions
+REM JAVA_OPTS should be used to reduce the memory footprint of SEE services if it is required.
+REM E.g.
+REM JAVA_OPTS=-Xms128m -Xmx512m
+JAVA_OPTS=
+
 setlocal DisableDelayedExpansion
 
 REM setting up environment for services

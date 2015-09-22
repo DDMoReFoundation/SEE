@@ -56,7 +56,7 @@
             <!-- Minimum set of test scripts that is required for software acceptance -->
             <id>acceptance</id>
             <properties>
-                <tests.includeTestScriptPattern>regex:.*(UseCase2).*</tests.includeTestScriptPattern>
+                <tests.includeTestScriptPattern>regex:.*(UPDRS1|Inverse_binomial|Poisson|Friberg|UseCase5_[\D]|UseCase2|UseCase1_[\D]|UseCase6|UseCase7|UseCase9).*</tests.includeTestScriptPattern>
                 <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
             </properties>
         </profile>

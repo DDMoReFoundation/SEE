@@ -28,7 +28,7 @@ IF EXIST !LOCAL_JAVA_HOME! (
 :setupJavaOptions
 REM JAVA_OPTS should be used to reduce the memory footprint of SEE services if it is required.
 REM E.g.
-REM JAVA_OPTS=-Xms128m -Xmx512m
+REM SET JAVA_OPTS=-Xms128m -Xmx512m
 SET JAVA_OPTS=
 
 setlocal DisableDelayedExpansion

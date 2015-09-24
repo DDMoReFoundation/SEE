@@ -12,9 +12,16 @@
         <!-- Change the below to appropriate 'Product x' release -->
         <see.release.version>${project.version}</see.release.version>
         <see.home>${project.build.directory}/SEE</see.home>
+        <see.modules>nonmem,psn,monolix</see.modules>
         <!-- downloaded binaries names - installer and test projects bundle -->
         <test.projects.archive.name>mdl-ide-test-projects-1.2.0-SNAPSHOT-at.zip</test.projects.archive.name>
+        <use.cases.archive.name>mdl-ide-test-projects-1.2.0-SNAPSHOT-usecases.zip</use.cases.archive.name>
         <see.installer.archive.name>see-installer-64b.zip</see.installer.archive.name>
+        <see.full.archive.name>see-full-64b.zip</see.full.archive.name>
+        <test.that.binary>src/test/resources/R/library/testthat_0.7.2.99.zip</test.that.binary>
+        
+        <cache.dir.name>cache</cache.dir.name>
+        <cache.dir>${project.build.directory}/../${cache.dir.name}</cache.dir>
         <!-- 
         Where TPT licenses should be acquired from, this directory structure is:
         licenses\
@@ -31,41 +38,52 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <tests.includeTestScriptPattern>regex:.+</tests.includeTestScriptPattern>
-        <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+        <tests.tagsInclusionPattern>.+</tests.tagsInclusionPattern>
+        <tests.tagsExclusionPattern></tests.tagsExclusionPattern>
+        <build.id>BUILD_ID</build.id>
     </properties>
 
     <profiles>
         <profile>
-            <!-- set of Test Scripts for which estimation takes short time -->
-            <id>fast</id>
+            <!-- Set of Test Scripts which is to be executed every day, these should involve execution of quick models but should 
+            test as broad set of functionalities as possible  -->
+            <id>daily</id>
             <properties>
-                <tests.includeTestScriptPattern>regex:.+TestScript\.R</tests.includeTestScriptPattern>
-                <tests.excludeTestScriptPattern>regex:.*(PsN|Simulix|Monolix|UseCase4|UseCase17|UseCase1_(([N8]))|UseCase(([\d]{2})|([2-9]))_[\d]+|UseCase5_[\D]|UseCase11_[\D]).*</tests.excludeTestScriptPattern>
+                <tests.tagsInclusionPattern>.*(UseCase(2|7|9)).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(UseCase2_).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>
-            <!-- set of Test Scripts for which estimation takes short time -->
+            <!-- set of Test Scripts for models that take longer time to execute, these currently are focused on
+            just basic estimation -->
             <id>slow</id>
             <properties>
-                <tests.includeTestScriptPattern>regex:.*(UseCase1_8|UseCase1_N|UseCase10_1|UseCase13_1|UseCase17|UseCase4|UseCase11_|UseCase12_|UseCase14_[\d]|UseCase2_|UseCase4_|UseCase5|UseCase8_[\d]).*TestScript\.R</tests.includeTestScriptPattern>
-                <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+                <tests.tagsInclusionPattern>.*(UseCase(1|4|4_|5|6|8_|10_1|11_|12_|13_1|14_|17)).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(psn|UseCase1_).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>
             <!-- Minimum set of test scripts that is required for software acceptance -->
-            <id>acceptance</id>
+            <id>weekly</id>
             <properties>
-                <tests.includeTestScriptPattern>regex:.*(UPDRS1|Inverse_binomial|Poisson|Friberg|UseCase5_[\D]|UseCase2|UseCase1_[\D]|UseCase6|UseCase7|UseCase9).*</tests.includeTestScriptPattern>
-                <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+                <tests.tagsInclusionPattern>.*(mdl|UseCase(1|2|5|6|7|9)|UPDRS1|Inverse_binomial|Poisson|Friberg).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(UseCase(5|1)_).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>
             <!-- Just PsN test scripts -->
             <id>psn</id>
             <properties>
-                <tests.includeTestScriptPattern>regex:.*(PsN).*</tests.includeTestScriptPattern>
-                <tests.excludeTestScriptPattern>regex:</tests.excludeTestScriptPattern>
+                <tests.tagsInclusionPattern>.*(psn).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(monolix|nonmem).*</tests.tagsExclusionPattern>
+            </properties>
+        </profile>
+        <profile>
+            <!-- Just Monolix test scripts -->
+            <id>monolix</id>
+            <properties>
+                <tests.tagsInclusionPattern>.*(monolix).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(nonmem|psn).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>
@@ -98,18 +116,63 @@
                 <see.installer.url>${see.repository.url}</see.installer.url>
             </properties>
         </profile>
+
+        <profile>
+            <id>use-full-see</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>wagon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-full-see</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>true</skip>
+                                    <url>${see.repository.url}</url>
+                                    <fromFile>${see.full.archive.name}</fromFile>
+                                    <toFile>${project.build.directory}/${see.full.archive.name}</toFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unzip-downloaded-full-see</id>
+                                <phase>process-sources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Unzipping ${see.full.archive.name}" />
+                                        <unzip
+                                            src="${project.build.directory}/${see.full.archive.name}"
+                                            dest="${project.build.directory}" />
+                                        <move file="${project.build.directory}/see-full" tofile="${see.home}"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>build-see</id>
-            <activation>
-                <file>
-                    <missing>target/SEE</missing>
-                </file>
-            </activation>
             <properties>
                 <see.installer.dir.name>see-installer</see.installer.dir.name>
                 <see.installer.home>${project.build.directory}/${see.installer.dir.name}</see.installer.home>
                 <see.installer.batch>see.bat</see.installer.batch>
-                <see.installer.params><![CDATA[ build -with nonmem,!mdl-ide -in ${see.home} -repository ${see.repository.url} ]]></see.installer.params>
+                <see.installer.params><![CDATA[ build -with ${see.modules},!mdl-ide -in ${see.home} -repository ${see.repository.url} ]]></see.installer.params>
             </properties>
             <build>
                 <plugins>
@@ -235,7 +298,59 @@
             </build>
         </profile>
         <profile>
-            <id>nonmem</id>
+            <id>prepare-cache</id>
+            <activation>
+                <file>
+                    <missing>cache</missing>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>wagon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-use-cases-project</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${test.projects.url}</url>
+                                    <fromFile>${use.cases.archive.name}</fromFile>
+                                    <toFile>${project.build.directory}/${use.cases.archive.name}</toFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unzip-downloaded-use-cases-project</id>
+                                <phase>generate-test-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Unzipping ${use.cases.archive.name}" />
+                                        <unzip
+                                            src="${project.build.directory}/${use.cases.archive.name}"
+                                            dest="${cache.dir}" />
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>licenses</id>
             <activation>
                 <file>
                     <missing>target/SEE/nm_7.3.0_g/license/nonmem.lic</missing>
@@ -368,12 +483,17 @@
                     <id>modify-temp-used-by-see</id>
                     <phase>pre-integration-test</phase>
                     <configuration>
-                        <target name="modify-temp-used-by-see">
+                        <target name="modify-temp-used-by-see" unless="skip.see.services.startup">
                             <mkdir dir="${project.build.directory}/temp" />
                             <echo
                                 file="${see.home}/modify-temp-used-by-see-see-env-setup.bat"><![CDATA[
                                     SET TEMP=${project.build.directory}\temp
                                     ]]></echo>
+                             <echo
+                                 message="Unzipping ${test.that.binary}" />
+                             <unzip
+                                 src="${test.that.binary}"
+                                 dest="${see.home}/R/R-3.0.3/library/" />
                         </target>
                     </configuration>
                     <goals>
@@ -384,7 +504,7 @@
                     <id>startup-see-services</id>
                     <phase>pre-integration-test</phase>
                     <configuration>
-                        <target>
+                        <target name="startup-see-services" unless="skip.see.services.startup">
                             <echo message="Starting up SEE services" />
                             <exec executable="cmd" dir="${see.home}"
                                 failonerror="true">
@@ -406,7 +526,7 @@
                     <id>stop-see-services</id>
                     <phase>post-integration-test</phase>
                     <configuration>
-                        <target name="stop-see-services">
+                        <target name="stop-see-services" unless="skip.see.services.shutdown">
                             <taskdef name="groovy"
                                 classname="org.codehaus.groovy.ant.Groovy" />
                             <groovy><![CDATA[
@@ -483,8 +603,10 @@
                         <include>**/*AT.java</include>
                     </includes>
                     <systemPropertyVariables>
-                        <includeTestScriptPattern>${tests.includeTestScriptPattern}</includeTestScriptPattern>
-                        <excludeTestScriptPattern>${tests.excludeTestScriptPattern}</excludeTestScriptPattern>
+                        <tagsInclusionPattern>${tests.tagsInclusionPattern}</tagsInclusionPattern>
+                        <tagsExclusionPattern>${tests.tagsExclusionPattern}</tagsExclusionPattern>
+                        <cache.path>${cache.dir}/UseCases</cache.path>
+                        <build.id>${build.id}</build.id>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -5,9 +5,8 @@ package eu.ddmore.see.tel;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -17,23 +16,21 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecuteResultHandler;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.StopWatch;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,24 +61,27 @@ import com.google.common.collect.Maps;
  */
 @RunWith(Parameterized.class)
 public class ExecuteTestProjectAT {
-    private final static Logger LOG = Logger.getLogger(ExecuteTestProjectAT.class);
+    final static Logger LOG = Logger.getLogger(ExecuteTestProjectAT.class);
+    private static final String TEST_SCRIPT_NAME_PATTERN = "regex:test\\..*\\.[Rr]";
+    private static final String TEST_SCRIPT_WRAPPER_TEMPLATE = "/TestScriptWrapperTemplate.template";
+    private static final String TEST_SCRIPT_WRAPPER_FILE_NAME_TEMPLATE = "wrapper.%s";
+    private static final String COMMON_PROJECT_MARKER_FILE = ".shared";
+    private static final String RDATA_FILE_EXT = "RData";
+
+    private static String tagsInclusionPattern = null;
+    private static String tagsExclusionPattern = null;
+    
+    private final File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
+    private final File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
+    private final File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
+    private final String buildId = System.getProperty("build.id", "NO_ID");
+    private final File cachePath = new File(System.getProperty("cache.path", "target/cache")).getAbsoluteFile();
     private final File testProject;
     private final File testScript;
-    private static final String testScriptPattern = "regex:.*TestScript\\.[Rr]";
-    private static final String TEST_SCRIPT_WRAPPER_TEMPLATE = "/TestScriptWrapperTemplate.template";
-    private static final String TEST_FILE = "test.R";
-    private static final String PID_FILE_EXT = "PID";
-    private static final String RDATA_FILE_EXT = "RData";
-    private File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
-    private File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
-    private File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
-    private static String includeTestScriptPattern = null;
-    private static String excludeTestScriptPattern = null;
-    
     /*
     * Attributes controlling test harness behaviour
     */
-    private static boolean DRY_RUN = true;
+    static boolean DRY_RUN = true;
     private static TestScriptMode TEST_SCRIPT_MODE = TestScriptMode.RunTestScript;
     private enum TestScriptMode {
         /**
@@ -107,11 +107,82 @@ public class ExecuteTestProjectAT {
                 System.setProperty(key, (String) en.getValue());
             }
         }
-        TEST_SCRIPT_MODE = TestScriptMode.valueOf(System.getProperty("testScriptMode"));
-        DRY_RUN = Boolean.parseBoolean(System.getProperty("dryRun"));
+        TEST_SCRIPT_MODE = TestScriptMode.valueOf(System.getProperty("testScriptMode", TestScriptMode.RunTestScript.name()));
+        DRY_RUN = Boolean.parseBoolean(System.getProperty("dryRun", "false"));
 
-        includeTestScriptPattern = System.getProperty("includeTestScriptPattern");
-        excludeTestScriptPattern = System.getProperty("excludeTestScriptPattern");
+        tagsInclusionPattern = System.getProperty("tagsInclusionPattern", ".*");
+        tagsExclusionPattern = System.getProperty("tagsExclusionPattern", "");
+    }
+    /**
+     * The method that produces the parameters to be passed to each construction of the test class.
+     * In this case, the {@link Path}s that are the test projects and test scripts.
+     * 
+     * @return paths of projects and test scripts within them, both absolute. 
+     */
+    @Parameters(name = "{index}: {1} -> {2}")
+    public static Iterable<Object[]> getTestProjects() throws Exception {
+        setUp();
+        File testProjectsLocation = new File(System.getProperty("test.projects")).getAbsoluteFile();
+
+        LOG.debug(String.format("Looking for all files in [%s] matching : [%s]", testProjectsLocation, TEST_SCRIPT_NAME_PATTERN));
+        
+        File[] testProjects = testProjectsLocation.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return new File(dir, name).isDirectory();
+            }
+        });
+        Preconditions.checkNotNull(testProjects, String.format("No test projects found in %s", testProjectsLocation));
+        Map<File, Set<Path>> projectsAndFiles = Maps.newHashMap();
+        for(File testProject : testProjects){
+            TestScriptFinder testScriptFinder = new TestScriptFinder(TEST_SCRIPT_NAME_PATTERN, tagsInclusionPattern, tagsExclusionPattern);
+            LOG.debug(String.format("Test Script include pattern : [%s]", tagsInclusionPattern));
+            LOG.debug(String.format("Test Script exclude pattern : [%s]", tagsExclusionPattern));
+            Files.walkFileTree(testProject.getAbsoluteFile().toPath(), testScriptFinder);
+            projectsAndFiles.put(testProject, testScriptFinder.getScripts());
+        }
+        
+        List<Object[]> parameters = Lists.newArrayList();
+        for(Entry<File, Set<Path>> en : projectsAndFiles.entrySet()) {
+            Path testProject = en.getKey().toPath();
+            for(Path testScript : en.getValue()) {
+                Path relativeTestScript = testProject.relativize(testScript);
+                parameters.add(new Object[] {testProject, testProject.getFileName().toString(), relativeTestScript});
+            }
+        }
+        Collections.sort(parameters, new Comparator<Object[]> () {
+
+            @Override
+            public int compare(Object[] left, Object[] right) {
+                int projectOrder = ((String)left[1]).compareTo((String)right[1]);
+                if(projectOrder!=0) {
+                    return projectOrder;
+                }
+                File lTestScript = getScriptFile(left);
+                int lOrder = extractOrder(lTestScript);
+                File rTestScript = getScriptFile(right);
+                int rOrder = extractOrder(rTestScript);
+                return Integer.compare(lOrder, rOrder);
+            }
+
+            private File getScriptFile(Object[] element) {
+                Path projectPath = (Path)element[0];
+                Path testScriptPath = (Path)element[2];
+                File testScript = projectPath.resolve(testScriptPath).toFile();
+                return testScript;
+            }
+
+            private int extractOrder(File testScript) {
+                int order = Integer.MAX_VALUE;
+                    String value = extractTag(testScript, "Order");
+                    if(!StringUtils.isBlank(value)) {
+                        order = Integer.parseInt(value);
+                    }
+                return order;
+            }
+
+        });
+        return parameters;
     }
 
     /**
@@ -126,62 +197,24 @@ public class ExecuteTestProjectAT {
     }
 
     /**
-     * The method that produces the parameters to be passed to each construction of the test class.
-     * In this case, the {@link Path}s that are the test projects and test scripts.
-     * 
-     *@return paths of projects and test scripts within them, both absolute. 
-     */
-    @Parameters(name = "{index}: Test Project {1}, Test Script {2}")
-    public static Iterable<Object[]> getTestProjects() throws Exception {
-        setUp();
-        File testProjectsLocation = new File(System.getProperty("test.projects")).getAbsoluteFile();
-
-        LOG.debug(String.format("Looking for all files in [%s] matching : [%s]", testProjectsLocation, testScriptPattern));
-        
-        File[] testProjects = testProjectsLocation.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return new File(dir, name).isDirectory();
-            }
-        });
-        Preconditions.checkNotNull(testProjects, String.format("No test projects found in %s", testProjectsLocation));
-        Map<File, Set<Path>> projectsAndFiles = Maps.newHashMap();
-        for(File testProject : testProjects){
-            TestScriptFinder testScriptFinder = new TestScriptFinder(testScriptPattern, includeTestScriptPattern, excludeTestScriptPattern);
-            LOG.debug(String.format("Test Script include pattern : [%s]", includeTestScriptPattern));
-            LOG.debug(String.format("Test Script exclude pattern : [%s]", excludeTestScriptPattern));
-            Files.walkFileTree(testProject.getAbsoluteFile().toPath(), testScriptFinder);
-            projectsAndFiles.put(testProject, testScriptFinder.getScripts());
-        }
-        
-        List<Object[]> parameters = Lists.newArrayList();
-        for(Entry<File, Set<Path>> en : projectsAndFiles.entrySet()) {
-            Path testProject = en.getKey().toPath();
-            for(Path testScript : en.getValue()) {
-                Path relativeTestScript = testProject.relativize(testScript);
-                parameters.add(new Object[] {testProject, testProject.getFileName().toString(), relativeTestScript});
-            }
-        }
-        return parameters;
-    }
-    
-    /**
      * Since:
      * <ol>
      *   <li>there might be interrelations between test projects (e.g. utils script in TestUtils project is sourced by the test scripts)</li>
      *   <li>each Test Script may modify any files</li>
      * </ol>
      * 
-     * Parent directory of the test project is treated as MDL IDE workspace and copied to a directory specific to a given Test Script execution and
-     * then the Test Script is executed. This ensures that each Test Script runs in unmodified workspace.
-     * 
+     * Test Scripts within the same project share working directory. The working directory imitates MDL IDE workspace and it contains:
+     * <ol>
+     *   <li>the test project that contains the script being executed</li>
+     *   <li>all test projects that contain COMMON_PROJECT_MARKER_FILE marker file</li>
+     * </ol>
      * The test is considered successful if it completes without exception.
      */
     @Test
     public void shouldSuccessfulyExecuteTestScript() throws Exception {
         File workingDirectory = prepareWorkspace(testProject, testScript);
         File testScriptPath = new File(new File(workingDirectory, testProject.getName()),testScript.getPath());
-        File wrapperScript = new File(testScriptPath.getParentFile(), TEST_FILE);
+        File wrapperScript = new File(testScriptPath.getParentFile(), String.format(TEST_SCRIPT_WRAPPER_FILE_NAME_TEMPLATE,testScript.getName()));
         prepareScriptWrapper(testScriptPath, wrapperScript, workingDirectory);
         LOG.info(StringUtils.repeat("#", 60));
         LOG.info(String.format("Working Directory [%s]",workingDirectory));
@@ -190,7 +223,10 @@ public class ExecuteTestProjectAT {
         LOG.info(String.format("Wrapper Script [%s]",wrapperScript));
         LOG.info(StringUtils.repeat("#", 60));
         try {
-            new TestScriptPerformer().run(rBinary, wrapperScript, workingDirectory);
+            TestScriptPerformer scriptPerformer = new TestScriptPerformer(wrapperScript, workingDirectory);
+            scriptPerformer.setRscriptExecutable(rBinary);
+            scriptPerformer.setDryRun(DRY_RUN);
+            scriptPerformer.run();
         } finally {
             LOG.info(StringUtils.repeat("#", 60));
             LOG.info(String.format("Test Script Execution [%s] END",testScriptPath));
@@ -200,29 +236,56 @@ public class ExecuteTestProjectAT {
 
     private File prepareWorkspace(File testProject, File testScript) throws IOException {
         File testWorkingDirectory = generateWorkingDirectoryPath(testProject, testScript);
+        if(testWorkingDirectory.exists()) {
+            // skip, previous test created the directory structure
+            return testWorkingDirectory;
+        }
         testWorkingDirectory.mkdirs();
-        FileUtils.copyDirectory(testProject.getParentFile(), testWorkingDirectory);
+        File[] projectsToCopy = testProject.getParentFile().listFiles((FileFilter)
+            FileFilterUtils.and(FileFilterUtils.directoryFileFilter(), 
+                FileFilterUtils.or(FileFilterUtils.nameFileFilter(testProject.getName()), new IOFileFilter()  {
+            @Override
+            public boolean accept(File dir, String name) {
+                return false;
+            }
+            
+            @Override
+            public boolean accept(File file) {
+                if(file.isDirectory()) {
+                    return new File(file,COMMON_PROJECT_MARKER_FILE).exists();
+                }
+                return false;
+            }
+        })));
+        for(File project : projectsToCopy) {
+            FileUtils.copyDirectory(project, new File(testWorkingDirectory, project.getName()));
+        }
         return testWorkingDirectory;
     }
 
     private File generateWorkingDirectoryPath(File testProject, File testScript) {
-        String name = testProject.getName() + "_" + testScript.getName().substring(0, (testScript.getName().length()>20)?20:testScript.getName().length());
+        String name = testProject.getName();
         return new File(atWorkingDirectoryParent, name);
     }
 
     private void prepareScriptWrapper(File scriptPath, File scriptWrapper, File workingDirectory) throws IOException {
         String template = FileUtils.readFileToString(FileUtils.toFile(ExecuteTestProjectAT.class.getResource(TEST_SCRIPT_WRAPPER_TEMPLATE)));
         template = template
-        .replaceAll("<MDLIDE_WORKSPACE_PATH>",toRPath(workingDirectory))
-        .replaceAll("<SEE_HOME>",toRPath(seeHome))
-        .replaceAll("<TEST_SCRIPT>",generateTestScript(scriptPath))
-        .replaceAll("<PID_FILE>", String.format("%s/%s", toRPath(scriptPath.getParentFile()), metaFileName(PID_FILE_EXT)))
-        .replaceAll("<R_DATA_FILE>", String.format("%s/%s", toRPath(scriptPath.getParentFile()), metaFileName(RDATA_FILE_EXT)));
+                            .replaceAll("<MDLIDE_WORKSPACE_PATH>",toRPath(workingDirectory))
+                            .replaceAll("<SEE_HOME>",toRPath(seeHome))
+                            .replaceAll("<TEST_SCRIPT>",generateTestScript(scriptPath))
+                            .replaceAll("<PID_FILE>", String.format("%s/%s", toRPath(scriptWrapper.getParentFile()), metaFileName(scriptWrapper.getName(), TestScriptPerformer.PID_FILE_EXT)))
+                            .replaceAll("<R_DATA_FILE>", String.format("%s/%s", toRPath(scriptWrapper.getParentFile()), metaFileName(scriptWrapper.getName(), RDATA_FILE_EXT)))
+                            .replaceAll("<BUILD_ID>", buildId)
+                            .replaceAll("<PROJECT_NAME>", testProject.getName())
+                            .replaceAll("<SCRIPT_NAME>", testScript.getName())
+                            .replaceAll("<CACHE_DIR>", toRPath(cachePath)
+                            );
         FileUtils.writeStringToFile(scriptWrapper, template);
     }
 
-    private static String metaFileName(String postfix) {
-        return TEST_FILE + "."+postfix;
+    private static String metaFileName(String baseName, String postfix) {
+        return baseName + "." + postfix;
     }
 
     private String generateTestScript(File scriptPath) {
@@ -247,19 +310,21 @@ public class ExecuteTestProjectAT {
      */
     private static class TestScriptFinder extends SimpleFileVisitor<Path> {
         private final PathMatcher matcher;
-        private final PathMatcher includeMatcher;
-        private final PathMatcher excludeMatcher;
+        private final Pattern includeMatcher;
+        private final Pattern excludeMatcher;
         private final Set<Path> scripts = new HashSet<>();
-        TestScriptFinder(String pattern, String includeTestScriptPattern, String excludeTestScriptPattern) {
+        TestScriptFinder(String pattern, String tagsInclusionPattern, String tagsExclusionPattern) {
             matcher = FileSystems.getDefault().getPathMatcher(pattern);
-            includeMatcher = FileSystems.getDefault().getPathMatcher(includeTestScriptPattern);
-            excludeMatcher = FileSystems.getDefault().getPathMatcher(excludeTestScriptPattern);
+            includeMatcher = Pattern.compile(tagsInclusionPattern);
+            excludeMatcher = Pattern.compile(tagsExclusionPattern);
         }
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             if (matcher.matches(file.getFileName())) {
-                if(includeMatcher.matches(file.getFileName())&&!excludeMatcher.matches(file.getFileName())) {
+                String tags = extractTag(file.toFile(), "Tags");
+                LOG.debug(String.format("Test Script's %s tags are:.", file.getFileName(), tags));
+                if(StringUtils.isBlank(tags)||(includeMatcher.matcher(tags).matches()&&!excludeMatcher.matcher(tags).matches())) {
                     LOG.debug(String.format("Found test script %s.", file.getFileName()));
                     scripts.add(file);
                 } else {
@@ -286,129 +351,19 @@ public class ExecuteTestProjectAT {
         }
     }
 
-    /**
-     * Instances of this class are responsible for executing given R script in a given working directory in Rscript.exe binary
-     */
-    private static class TestScriptPerformer {
-        private static final String STDOUT_FILE_EXT = "stdout";
-        private static final String STDERR_FILE_EXT = "stderr";
-        private static final String R_TMP_DIRECTORY_SUFFIX = ".Rtmp";
-        private static final String R_TMP_DIR_ENV_VARIABLE = "TMPDIR";
-        private static Long PROCESS_TIMEOUT = TimeUnit.MINUTES.toMillis(Long.parseLong(System.getProperty("testscript.timeout")));
-
-        public void run(File rscriptExecutable, File scriptPath, File workingDirectory) throws Exception {
-            CommandLine cmdLine = new CommandLine(rscriptExecutable);
-            cmdLine.addArgument(scriptPath.getPath());
-            LOG.debug(String.format("Executing command %s in %s", cmdLine, workingDirectory));
-            Map<String,String> env = Maps.newHashMap();
-            env.putAll(System.getenv());
-            
-            DefaultExecutor executor = createCommandExecutor();
-            executor.setWorkingDirectory(workingDirectory);
-            Path relativeScriptLocation = workingDirectory.toPath().relativize(scriptPath.toPath());
-            File tmpDir = new File(workingDirectory, relativeScriptLocation.toString() + R_TMP_DIRECTORY_SUFFIX);
-            if(!tmpDir.exists()) {
-                Preconditions.checkState(tmpDir.mkdirs(), String.format("Could not create R tmp directory %s.", tmpDir));
-            }
-            env.put(R_TMP_DIR_ENV_VARIABLE, tmpDir.getAbsolutePath());
-            File stdoutFile = new File(workingDirectory, relativeScriptLocation.toString() + "." + STDOUT_FILE_EXT);
-            File stderrFile = new File(workingDirectory, relativeScriptLocation.toString() + "." + STDERR_FILE_EXT);
-            File pidFile = new File(workingDirectory, relativeScriptLocation.toString()  + "." + PID_FILE_EXT);
+    private static String extractTag(File file, String tag) {
+        Pattern p = Pattern.compile("\\s*#+\\s*"+tag+":\\s*(.+)");
             try {
-                try (BufferedOutputStream stdoutOS = new BufferedOutputStream(new TeeOutputStream(new FileOutputStream(stdoutFile),System.out));
-                        BufferedOutputStream stderrOS = new BufferedOutputStream(new TeeOutputStream(new FileOutputStream(stderrFile),System.err))) {
-                    PumpStreamHandler pumpStreamHandler = new PumpStreamHandler(stdoutOS, stderrOS);
-                    executor.setStreamHandler(pumpStreamHandler);
-                    StopWatch stopWatch = new StopWatch();
-                    stopWatch.start();
-                    DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-                    try {
-                        if(DRY_RUN) {
-                            LOG.debug("Skipping test script execution.");
-                        } else {
-                            executor.execute(cmdLine, env, resultHandler);
-                            monitorProgress(executor, resultHandler, pidFile);
-                        }
-                    } finally {
-                        stopWatch.stop();
-                        LOG.info(String.format("Execution of %s script took %s s.", scriptPath,
-                        TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime())));
+                List<String> lines = FileUtils.readLines(file);
+                for(String line : lines) {
+                    Matcher m = p.matcher(line);
+                    if(m.matches()) {
+                        return m.group(1).trim();
                     }
                 }
-                
-            } catch(Exception e) {
-                throw new Exception(String.format("Error when executing %s.\n STDOUT: [%s]\n STDERR: [%s] ", scriptPath, FileUtils.readFileToString(stdoutFile), FileUtils.readFileToString(stderrFile)),e);
+            } catch (IOException e) {
+                throw new IllegalStateException(String.format("Could not read test script %s.",file), e);
             }
-        }
-        /**
-         * This method performs monitoring of the external process. Since WatchDog can't be relied on this method actively polls
-         * for running process and enforces process destruction if timeout is reached.
-         * This approach is even suggested by https://commons.apache.org/proper/commons-exec/apidocs/org/apache/commons/exec/ExecuteWatchdog.html
-         * @param pidFile 
-         * @param externalProcessInput 
-         */
-        private void monitorProgress(DefaultExecutor executor, DefaultExecuteResultHandler resultHandler, File pidFile) throws Exception {
-            boolean monitor = true;
-            long waitedSoFar = 0l;
-            long step = TimeUnit.SECONDS.toMillis(20);
-            while(monitor) {
-                waitedSoFar+=step;
-                resultHandler.waitFor(step);
-                if(resultHandler.hasResult()) {
-                    break;
-                }
-                if(waitedSoFar>PROCESS_TIMEOUT) {
-                    LOG.error("Attempting to destroy external process...");
-                    /* We invoke destroyProcess method, but this is not guaranteed to work and sometimes results in a detachment from the external process.
-                     * There is also no easy way of sending SIGINT signal to an external process on Windows platform hence we can't guarantee that
-                     * the external process actually stops.
-                     * 
-                     * Here we can only give some time to an external process to shut down. We accept this resource leak just because
-                     * in this particular case even if the Rscript being run was killed underlying NONMEM execution would still run anyway
-                     * (since DDMoRe connectors do not support cancellation).
-                     */
-                    executor.getWatchdog().destroyProcess();
-                    if(waitedSoFar>(PROCESS_TIMEOUT+step)) {
-                        monitor = false;
-                        LOG.error("The external process did not stop using Commons Exec.");
-                        killProcess(pidFile);
-                    }
-                }
-            }
-            if(executor.getWatchdog().killedProcess()) {
-                throw new IllegalStateException("The process timed out.");
-            } else {
-                if(executor.isFailure(resultHandler.getExitValue())) {
-                    throw new Exception("External process exited with non-zero exit value.");
-                }
-            }
-        }
-        
-        private void killProcess(File pidFile) {
-            String pid;
-            try {
-                pid = FileUtils.readFileToString(pidFile);
-            } catch (IOException e1) {
-                throw new RuntimeException(String.format("Could not read process PID file %s.",pidFile));
-            }
-            String killCommand = String.format("powershell Stop-Process %s",pid);
-            LOG.info(String.format("Attempting to kill process using command [%s].", killCommand));
-            try {
-                DefaultExecutor executor = createCommandExecutor();
-                int exitCode = executor.execute(CommandLine.parse(killCommand));
-                LOG.info(String.format("Kill command returned %s", exitCode));
-            } catch (Exception e) {
-                throw new RuntimeException(String.format("Could not stop process with PID [%s].",pid));
-            }
-            
-        }
-        private DefaultExecutor createCommandExecutor() {
-            DefaultExecutor executor = new DefaultExecutor();
-            executor.setExitValue(0);
-            ExecuteWatchdog watchdog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
-            executor.setWatchdog(watchdog);
-            return executor;
-        }
+        return "";
     }
-
 }

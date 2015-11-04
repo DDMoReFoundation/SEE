@@ -49,7 +49,7 @@
             test as broad set of functionalities as possible  -->
             <id>daily</id>
             <properties>
-                <tests.tagsInclusionPattern>.*(UseCase7).*</tests.tagsInclusionPattern>
+                <tests.tagsInclusionPattern>.*(mdl|UseCase(2|7|9)).*</tests.tagsInclusionPattern>
                 <tests.tagsExclusionPattern>.*(UseCase2_).*</tests.tagsExclusionPattern>
             </properties>
         </profile>

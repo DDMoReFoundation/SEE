@@ -49,8 +49,8 @@
             test as broad set of functionalities as possible  -->
             <id>daily</id>
             <properties>
-                <tests.tagsInclusionPattern>.*(mdl|UseCase(2|7|9)).*</tests.tagsInclusionPattern>
-                <tests.tagsExclusionPattern>.*(UseCase2_).*</tests.tagsExclusionPattern>
+                <tests.tagsInclusionPattern>.*(mdl|(UseCase(1|2|3|5|7|9|11|17)(?!_)))\b.*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(bootstrap.*(UseCase[13456789])).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>

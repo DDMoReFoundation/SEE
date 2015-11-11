@@ -1,7 +1,7 @@
 #
 # This script is executed in SEE home directory
 # Pre-load libraries that we know will be required, primarily the TEL package itself
-library('DDMoRe.TEL')
+library('ddmore')
 library('xpose4')
 
 # Additional initialisation specific to third party tools
@@ -43,8 +43,8 @@ library('xpose4')
 .printPluginInitSummary(.pluginInitStatus)
 
 # Start the FIS and MIF/TES servers
-DDMoRe.TEL:::TEL.setServer(createFISServer(startupScript=file.path(getwd(),"startup.bat")))
-DDMoRe.TEL:::TEL.startServer(DDMoRe.TEL:::TEL.getServer())
+ddmore:::DDMORE.setServer(createFISServer(startupScript=file.path(getwd(),"startup.bat")))
+ddmore:::DDMORE.startServer(ddmore:::DDMORE.getServer())
 
 # Housekeeping (clear workspace variables)
 ignore=list(".MDLIDE_WORKSPACE_PATH")

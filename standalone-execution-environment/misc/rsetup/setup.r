@@ -8,9 +8,9 @@
 
 mainReposURL <- 'http://www.stats.bris.ac.uk/R';
 
-ddmore.tel.dep=c("bitops", "brew", "digest", "RCurl", "rjson", "roxygen2", "stringr", "XML");
+ddmore.pkg.dep=c("bitops", "brew", "digest", "RCurl", "rjson", "roxygen2", "stringr", "XML");
 print('installing TEL R package dependencies');
-install.packages(ddmore.tel.dep, repos=mainReposURL);
+install.packages(ddmore.pkg.dep, repos=mainReposURL);
 
 simulx.dep=c("Rcpp", "ggplot2", "gridExtra", "reshape", "reshape2");
 print('installing mlxR (simulx front-end) dependencies');
@@ -40,4 +40,4 @@ print("installing knitr library, it was suggested it may be useful")
 install.packages("knitr", repos=mainReposURL)
 
 # we don't want to run statet, it requires java
-lapply(c(ddmore.tel.dep, simulx.dep, "xpose4"), function (x) library(x, character.only=TRUE) )
+lapply(c(ddmore.pkg.dep, simulx.dep, "xpose4"), function (x) library(x, character.only=TRUE) )

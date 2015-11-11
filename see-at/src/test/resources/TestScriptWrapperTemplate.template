@@ -23,5 +23,5 @@ print(err)
 #return 100 to indicate failure in case of error
 return(100)
 })
-#quit, don't create a workspace image and don't use TEL.R's quit but the base implementation, so SEE services are not shut down
+#quit, don't create a workspace image and don't use ddmore package's quit but the base implementation, so SEE services are not shut down
 base::q('no',.seeAtResult,FALSE)

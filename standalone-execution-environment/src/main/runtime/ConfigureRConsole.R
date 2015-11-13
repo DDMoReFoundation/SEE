@@ -1,11 +1,11 @@
 #
 # This script is executed in SEE home directory
-# Pre-load libraries that we know will be required, primarily the TEL package itself
+# Pre-load libraries that we know will be required, primarily the ddmore package itself
 library('ddmore')
 library('xpose4')
 
 # Additional initialisation specific to third party tools
-.INIT_SCRIPT_NAME <- "tel-init.R"
+.INIT_SCRIPT_NAME <- "r-console-init.R"
 .runPluginInitScriptIfExists <- function(directory) {
     initScript <- file.path(getwd(),directory,.INIT_SCRIPT_NAME)
     result <- list(script = initScript)
@@ -29,11 +29,11 @@ library('xpose4')
         paste0("* ", x$script, " initialization status: ", x$loadStatus,"\n") 
     })
     message(paste(replicate(80, "-"), collapse = ""))
-    message("\nSEE TEL Plugins' initialization scripts execution status\n ")
+    message("\nSEE Plugins' initialization scripts execution status\n ")
     if(length(msgs)>0) {
         message(paste0(msgs))
     } else {
-        message("No additional TEL initialization scripts were found in SEE installation\n")
+        message("No additional R console initialization scripts were found in SEE installation\n")
     }
     message(paste(replicate(80, "-"), collapse = ""))
     message("\n")

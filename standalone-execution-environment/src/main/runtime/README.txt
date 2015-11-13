@@ -21,7 +21,7 @@ Components
 ---------------------------------------------
 There are the following DDMoRe components included in SEE package:
 
-* TEL R Package - ${r.tel.package.version}
+* DDMoRe R Package - ${r.tel.package.version}
 * Refer to Third Party SEE Plug-in 'README' files for their versions
 
 Other Tools and Supporting Libraries included in the package:

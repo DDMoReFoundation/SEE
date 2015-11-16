@@ -1,7 +1,7 @@
 cat(Sys.getpid(),file="<PID_FILE>")
 .MDLIDE_WORKSPACE_PATH<-'<MDLIDE_WORKSPACE_PATH>'
 setwd('<SEE_HOME>')
-source('ConfigureTelConsole.R')
+source('ConfigureRConsole.R')
 setwd(.MDLIDE_WORKSPACE_PATH)
 .BUILD_ID<-'<BUILD_ID>'
 .CACHE_DIR<-'<CACHE_DIR>'

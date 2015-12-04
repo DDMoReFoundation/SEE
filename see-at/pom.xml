@@ -370,7 +370,7 @@
                 <nonmem.license.name>nonmem.lic</nonmem.license.name>
                 <see.nonmem.license.location>${project.build.directory}/SEE/nm_7.3.0_g/license/${nonmem.license.name}</see.nonmem.license.location>
                 <!-- default location from where Standalone NONMEM SEE is to be obtained -->
-                <standalone.nonmem.installation.location>file://${project.build.directory}/../../</standalone.nonmem.installation.location>
+                <standalone.nonmem.installation.location>file://${project.build.directory}/../../../</standalone.nonmem.installation.location>
                 <standalone.nonmem.installation.archive.name>nm_7.3.0_g.zip</standalone.nonmem.installation.archive.name>
             </properties>
             <build>

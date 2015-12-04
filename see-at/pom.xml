@@ -360,7 +360,7 @@
             </build>
         </profile>
         <profile>
-            <id>licenses</id>
+            <id>post-installation</id>
             <activation>
                 <file>
                     <missing>target/SEE/nm_7.3.0_g/license/nonmem.lic</missing>
@@ -369,6 +369,9 @@
             <properties>
                 <nonmem.license.name>nonmem.lic</nonmem.license.name>
                 <see.nonmem.license.location>${project.build.directory}/SEE/nm_7.3.0_g/license/${nonmem.license.name}</see.nonmem.license.location>
+                <!-- default location from where Standalone NONMEM SEE is to be obtained -->
+                <standalone.nonmem.installation.location>file://${project.build.directory}/../../</standalone.nonmem.installation.location>
+                <standalone.nonmem.installation.archive.name>nm_7.3.0_g.zip</standalone.nonmem.installation.archive.name>
             </properties>
             <build>
                 <plugins>
@@ -376,6 +379,18 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>wagon-maven-plugin</artifactId>
                         <executions>
+                            <execution>
+                                <id>download-binary-NONMEM</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${standalone.nonmem.installation.location}</url>
+                                    <fromFile>${standalone.nonmem.installation.archive.name}</fromFile>
+                                    <toDir>${project.build.directory}</toDir>
+                                </configuration>
+                            </execution>
                             <execution>
                                 <id>download-nonmem-license</id>
                                 <phase>process-test-resources</phase>
@@ -387,6 +402,29 @@
                                     <fromFile>${nonmem.license.name}</fromFile>
                                     <toFile>${see.nonmem.license.location}</toFile>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>unzip-downloaded-binary-NONMEM</id>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Unzipping ${standalone.nonmem.installation.archive.name}" />
+                                        <unzip
+                                            src="${project.build.directory}/${standalone.nonmem.installation.archive.name}"
+                                            dest="${project.build.directory}/SEE" />
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>

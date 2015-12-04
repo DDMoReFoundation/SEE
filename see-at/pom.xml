@@ -7,7 +7,7 @@
     <groupId>eu.ddmore</groupId>
     <artifactId>standalone-execution-environment-at</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.2.0</version>
     <properties>
         <!-- Change the below to appropriate 'Product x' release -->
         <see.release.version>${project.version}</see.release.version>

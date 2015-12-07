@@ -49,7 +49,7 @@
             test as broad set of functionalities as possible  -->
             <id>daily</id>
             <properties>
-                <tests.tagsInclusionPattern>.*(mdl|(UseCase(1|2|3|4|5|6|7|8|9|11|14|17)(?!_)))\b.*</tests.tagsInclusionPattern>
+                <tests.tagsInclusionPattern>.*(mdl|(UseCase(1|2|3|4|5|6|7|8|9|11|14|17)))\b.*</tests.tagsInclusionPattern>
                 <tests.tagsExclusionPattern>.*(bootstrap.*(UseCase[13456789])).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
@@ -73,7 +73,7 @@
             <!-- Minimum set of test scripts that is required for software acceptance -->
             <id>weekly</id>
             <properties>
-                <tests.tagsInclusionPattern>.*((UseCase(1|2|3|4|5|6|7|8|9|11|14|17)(?!_)))\b.*</tests.tagsInclusionPattern>
+                <tests.tagsInclusionPattern>.*((UseCase(1|2|3|4|5|6|7|8|9|11|14|17)))\b.*</tests.tagsInclusionPattern>
                 <tests.tagsExclusionPattern>.*(nonmem|monolix|vpc|mdl|xpdb).*</tests.tagsExclusionPattern>
             </properties>
         </profile>

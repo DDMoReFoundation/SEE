@@ -23,7 +23,7 @@
         <static.content.location.embedded>src/main/lib/</static.content.location.embedded>
         <r.binary.name>R-${r.version}.zip</r.binary.name>
         <r.bundle.target>${project.build.directory}/R-bundle</r.bundle.target>
-        <r.tel.package.binary.url>http://cismaster/jenkins/job/DDMoRe-ddmore/lastSuccessfulBuild/artifact/.__artefacts/</r.tel.package.binary.url>
+        <r.tel.package.binary.url>http://cismaster/jenkins/job/DDMoRe-ddmore_Demonstrator_1.2.0_Release/lastSuccessfulBuild/artifact/.__artefacts/</r.tel.package.binary.url>
         <!-- Note that the build number here cannot be parameterised easily 
             since maven-wagon-plugin cannot handle wildcards -->
         <r.tel.package.binary.name>ddmore_${r.tel.package.version}.zip</r.tel.package.binary.name>

@@ -49,8 +49,15 @@
             test as broad set of functionalities as possible  -->
             <id>daily</id>
             <properties>
-                <tests.tagsInclusionPattern>.*(mdl|(UseCase(1|2|3|5|7|9|11)(?!_)))\b.*</tests.tagsInclusionPattern>
+                <tests.tagsInclusionPattern>.*(mdl|(UseCase(1|2|3|4|5|6|7|8|9|11|14|17)(?!_)))\b.*</tests.tagsInclusionPattern>
                 <tests.tagsExclusionPattern>.*(bootstrap.*(UseCase[13456789])).*</tests.tagsExclusionPattern>
+            </properties>
+        </profile>
+        <profile>
+            <id>custom</id>
+            <properties>
+                <tests.tagsInclusionPattern>.*(UseCase8(?!_)).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(bootstrap).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>
@@ -66,8 +73,8 @@
             <!-- Minimum set of test scripts that is required for software acceptance -->
             <id>weekly</id>
             <properties>
-                <tests.tagsInclusionPattern>.*(mdl|UseCase(4|6|8|10|12|13|14|15|16|17)|UseCase[\d]+_[\d]+).*</tests.tagsInclusionPattern>
-                <tests.tagsExclusionPattern>.*(bootstrap.*(UseCase[13456789])).*</tests.tagsExclusionPattern>
+                <tests.tagsInclusionPattern>.*((UseCase(1|2|3|4|5|6|7|8|9|11|14|17)(?!_)))\b.*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern>.*(nonmem|monolix|vpc|mdl|xpdb).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>
@@ -242,11 +249,6 @@
         </profile>
         <profile>
             <id>prepare-test-projects</id>
-            <activation>
-                <file>
-                    <missing>target/test-projects</missing>
-                </file>
-            </activation>
             <properties>
                 <test.projects.dir.name>test-projects</test.projects.dir.name>
                 <test.projects.home>${project.build.directory}/${test.projects.dir.name}</test.projects.home>
@@ -360,15 +362,13 @@
             </build>
         </profile>
         <profile>
-            <id>licenses</id>
-            <activation>
-                <file>
-                    <missing>target/SEE/nm_7.3.0_g/license/nonmem.lic</missing>
-                </file>
-            </activation>
+            <id>post-installation</id>
             <properties>
                 <nonmem.license.name>nonmem.lic</nonmem.license.name>
                 <see.nonmem.license.location>${project.build.directory}/SEE/nm_7.3.0_g/license/${nonmem.license.name}</see.nonmem.license.location>
+                <!-- default location from where Standalone NONMEM SEE is to be obtained -->
+                <standalone.nonmem.installation.location>file://${project.build.directory}/../../../</standalone.nonmem.installation.location>
+                <standalone.nonmem.installation.archive.name>nm_7.3.0_g.zip</standalone.nonmem.installation.archive.name>
             </properties>
             <build>
                 <plugins>
@@ -376,6 +376,18 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>wagon-maven-plugin</artifactId>
                         <executions>
+                            <execution>
+                                <id>download-binary-NONMEM</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>${standalone.nonmem.installation.location}</url>
+                                    <fromFile>${standalone.nonmem.installation.archive.name}</fromFile>
+                                    <toDir>${project.build.directory}</toDir>
+                                </configuration>
+                            </execution>
                             <execution>
                                 <id>download-nonmem-license</id>
                                 <phase>process-test-resources</phase>
@@ -387,6 +399,29 @@
                                     <fromFile>${nonmem.license.name}</fromFile>
                                     <toFile>${see.nonmem.license.location}</toFile>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>unzip-downloaded-binary-NONMEM</id>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <echo
+                                            message="Unzipping ${standalone.nonmem.installation.archive.name}" />
+                                        <unzip
+                                            src="${project.build.directory}/${standalone.nonmem.installation.archive.name}"
+                                            dest="${project.build.directory}/SEE" />
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
@@ -451,6 +486,7 @@
         </dependency>
     </dependencies>
     <build>
+        <directory>${project.basedir}/t</directory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

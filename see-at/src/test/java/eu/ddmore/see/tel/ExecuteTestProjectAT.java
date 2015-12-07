@@ -71,11 +71,11 @@ public class ExecuteTestProjectAT {
     private static String tagsInclusionPattern = null;
     private static String tagsExclusionPattern = null;
     
-    private final File atWorkingDirectoryParent = new File("target/at").getAbsoluteFile();
+    private final File atWorkingDirectoryParent = new File("t/at").getAbsoluteFile();
     private final File rBinary = new File(System.getProperty("see.home"), System.getProperty("see.RScript"));
     private final File seeHome = new File(System.getProperty("see.home")).getAbsoluteFile();
     private final String buildId = System.getProperty("build.id", "NO_ID");
-    private final File cachePath = new File(System.getProperty("cache.path", "target/cache")).getAbsoluteFile();
+    private final File cachePath = new File(System.getProperty("cache.path", "t/cache")).getAbsoluteFile();
     private final File testProject;
     private final File testScript;
     /*

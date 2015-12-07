@@ -16,7 +16,7 @@ Thumbs.db
 
 # Maven #
 target/
-
+t/
 # ANT #
 build/
 

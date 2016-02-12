@@ -12,6 +12,13 @@ REM No tool-specific settings should be added here, SEE plugins should use '*-se
 
 SET MIF_CONNECTORS_ENV_PARAMS=
 
+REM Passed to MIF and FIS startup scripts. This parameter controls if SEE integrates with remote or local MIF instances.
+REM the possible values are (localMIF (default if MIF_MODE is not set), remoteMIF)
+REM Note! If you choose the "remoteMIF" mode then you have to update fis/startup.bat script as well. (refer to the script for details on what should be updated)
+REM SET MIF_MODE=remoteMIF
+
+
+
 :setupJava
 setlocal EnableDelayedExpansion
 REM SEE is usually delivered with JRE so if it is there use it to launch SEE services.

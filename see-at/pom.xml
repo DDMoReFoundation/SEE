@@ -61,6 +61,13 @@
             </properties>
         </profile>
         <profile>
+            <id>simcyp</id>
+            <properties>
+                <tests.tagsInclusionPattern>.*(simcyp).*</tests.tagsInclusionPattern>
+                <tests.tagsExclusionPattern></tests.tagsExclusionPattern>
+            </properties>
+        </profile>
+        <profile>
             <!-- set of Test Scripts for models that take longer time to execute, these currently are focused on
             just basic estimation -->
             <id>slow</id>

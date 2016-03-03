@@ -12,7 +12,7 @@
         <!-- Change the below to appropriate 'Product x' release -->
         <see.release.version>${project.version}</see.release.version>
         <see.home>${project.build.directory}/SEE</see.home>
-        <see.modules>nonmem,psn,monolix</see.modules>
+        <see.modules>nonmem,psn,monolix,simcyp</see.modules>
         <!-- downloaded binaries names - installer and test projects bundle -->
         <test.projects.archive.name>mdl-ide-test-projects-1.4.0-SNAPSHOT-at.zip</test.projects.archive.name>
         <use.cases.archive.name>mdl-ide-test-projects-1.4.0-SNAPSHOT-usecases.zip</use.cases.archive.name>
@@ -372,7 +372,9 @@
             <id>post-installation</id>
             <properties>
                 <nonmem.license.name>nonmem.lic</nonmem.license.name>
+                <monolix.license.name>ddmore.lic</monolix.license.name>
                 <see.nonmem.license.location>${project.build.directory}/SEE/nm_7.3.0_g/license/${nonmem.license.name}</see.nonmem.license.location>
+                <see.monolix.license.location>${project.build.directory}/SEE/Monolix432s/bin/Monolix_MCR/runtime/config/system/access/${monolix.license.name}</see.monolix.license.location>
                 <!-- default location from where Standalone NONMEM SEE is to be obtained -->
                 <standalone.nonmem.installation.location>file://${project.build.directory}/../../../</standalone.nonmem.installation.location>
                 <standalone.nonmem.installation.archive.name>nm_7.3.0_g.zip</standalone.nonmem.installation.archive.name>
@@ -405,6 +407,18 @@
                                     <url>file://${basedir}/${license.repository.url}/Nonmem</url>
                                     <fromFile>${nonmem.license.name}</fromFile>
                                     <toFile>${see.nonmem.license.location}</toFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-monolix-license</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>download-single</goal>
+                                </goals>
+                                <configuration>
+                                    <url>file://${basedir}/${license.repository.url}/Monolix</url>
+                                    <fromFile>${monolix.license.name}</fromFile>
+                                    <toFile>${see.monolix.license.location}</toFile>
                                 </configuration>
                             </execution>
                         </executions>

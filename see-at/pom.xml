@@ -50,7 +50,7 @@
             <id>daily</id>
             <properties>
                 <tests.tagsInclusionPattern>.*(mdl|(UseCase(4|10|10_1|15)(?!_)))\b.*</tests.tagsInclusionPattern>
-                <tests.tagsExclusionPattern>.*(bootstrap.*(UseCase[12356789])).*</tests.tagsExclusionPattern>
+                <tests.tagsExclusionPattern>.*(bootstrap).*</tests.tagsExclusionPattern>
             </properties>
         </profile>
         <profile>

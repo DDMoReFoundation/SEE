@@ -56,7 +56,7 @@
         <profile>
             <id>custom</id>
             <properties>
-                <tests.tagsInclusionPattern>.*(UseCase4(?!_)).*</tests.tagsInclusionPattern>
+                <tests.tagsInclusionPattern>.*((simcyp)|(UseCase2(?!_))).*</tests.tagsInclusionPattern>
                 <tests.tagsExclusionPattern>.*(bootstrap).*</tests.tagsExclusionPattern>
             </properties>
         </profile>

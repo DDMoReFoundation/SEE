@@ -42,8 +42,27 @@ library('xpose4')
 .pluginInitStatus <- lapply(dir()[file.info(dir())[,"isdir"]],.runPluginInitScriptIfExists)
 .printPluginInitSummary(.pluginInitStatus)
 
-# Start the FIS and MIF/TES servers
-ddmore:::DDMORE.setServer(createFISServer(startupScript=file.path(getwd(),"startup.bat")))
+# If SSL is used by FIS, make sure that it's certificate is in the truststore and comment-out the following line.
+#options(RCurlOptions = list(cainfo="/opt/ddmore/keystore/cacert.pem", ssl.verifyhost=FALSE))
+
+# Load FIS Server configuration
+fisServerConfigurationFile<-file.path("~/FISServer.json")
+if(!file.exists(fisServerConfigurationFile)) {
+	fisServerConfigurationFile<-Sys.getenv("FIS_SERVER_CONFIG")
+if(!file.exists(fisServerConfigurationFile)) {
+	fisServerConfigurationFile<-file.path(getwd(), "FISServer.json")
+}	
+}
+
+if(file.exists(fisServerConfigurationFile)) {
+	fisServer <- createFISServerFromProperties(fisServerConfigurationFile)
+} else {
+	fisServer <- createFISServer(startupScript=file.path(getwd(),"startup.bat"))
+}
+
+ddmore:::DDMORE.setServer(fisServer)
+
+# Connect to FIS server
 ddmore:::DDMORE.startServer(ddmore:::DDMORE.getServer())
 
 # Housekeeping (clear workspace variables)

@@ -1,0 +1,12 @@
+{
+    "url":"http://localhost:9010",
+    "operationalUrl":"http://localhost:9011",
+    "startupScript":"startup.bat",
+    "jobStatusPollingDelay":20,
+    "startupPollingMax":120,
+    "startupPollingDelay":1,
+    "serverMode": false,
+    "userInfo": {
+      "executeAsUser" : false
+     }
+}

@@ -17,6 +17,10 @@ REM the possible values are (localMIF (default if MIF_MODE is not set), remoteMI
 REM Note! If you choose the "remoteMIF" mode then you have to update fis/startup.bat script as well. (refer to the script for details on what should be updated)
 REM SET MIF_MODE=remoteMIF
 
+REM Passed to FIS startup scripts. This parameter controls if SEE integrates with remote or local CTS instances.
+REM the possible values are (localCTS (default if CTS_MODE is not set), remoteCTS)
+REM Note! If you choose the "remoteCTS" mode then you have to update fis/startup.bat script as well. (refer to the script for details on what should be updated)
+REM SET CTS_MODE=remoteCTS
 
 
 :setupJava

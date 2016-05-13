@@ -45,16 +45,18 @@ library('xpose4')
 # If SSL is used by FIS, make sure that it's certificate is in the truststore and comment-out the following line.
 #options(RCurlOptions = list(cainfo="/opt/ddmore/keystore/cacert.pem", ssl.verifyhost=FALSE))
 
-# Load FIS Server configuration
-fisServerConfigurationFile<-file.path("~/FISServer.json")
-if(!file.exists(fisServerConfigurationFile)) {
-	fisServerConfigurationFile<-Sys.getenv("FIS_SERVER_CONFIG")
-if(!file.exists(fisServerConfigurationFile)) {
-	fisServerConfigurationFile<-file.path(getwd(), "FISServer.json")
-}	
+# Discover FISServer.json
+fisServerConfigurationFile<-NULL
+
+fisServerConfigurationFiles <- c(file.path(Sys.getenv("USERPROFILE"),"FISServer.json"),
+		file.path("~/FISServer.json"),Sys.getenv("FIS_SERVER_CONFIG"),file.path(getwd(), "FISServer.json"))
+fisServerConfigurationFilesThatExist <- fisServerConfigurationFiles[unlist(lapply(fisServerConfigurationFiles, function(x) { file.exists(x)} ))]
+
+if(length(fisServerConfigurationFilesThatExist)>0) {
+	fisServerConfigurationFile<-fisServerConfigurationFilesThatExist[1]
 }
 
-if(file.exists(fisServerConfigurationFile)) {
+if(!is.null(fisServerConfigurationFile)) {
 	fisServer <- createFISServerFromProperties(fisServerConfigurationFile)
 } else {
 	fisServer <- createFISServer(startupScript=file.path(getwd(),"startup.bat"))

@@ -4,12 +4,12 @@
     <groupId>eu.ddmore</groupId>
     <artifactId>standalone-execution-environment</artifactId>
     <packaging>pom</packaging>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <name>Standalone Execution Environment</name>
 
     <properties>
         <!-- Versions of the tools included in SEE -->
-        <r.tel.package.version>0.0.5</r.tel.package.version>
+        <r.tel.package.version>0.0.6</r.tel.package.version>
         <rnmimport.version>3.9</rnmimport.version>
         <rnmgraphics.version>3.2.1</rnmgraphics.version>
         <r.version>3.0.3</r.version>

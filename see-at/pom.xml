@@ -7,15 +7,15 @@
     <groupId>eu.ddmore</groupId>
     <artifactId>standalone-execution-environment-at</artifactId>
     <packaging>jar</packaging>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <properties>
         <!-- Change the below to appropriate 'Product x' release -->
         <see.release.version>${project.version}</see.release.version>
         <see.home>${project.build.directory}/SEE</see.home>
         <see.modules>nonmem,psn,monolix,simcyp</see.modules>
         <!-- downloaded binaries names - installer and test projects bundle -->
-        <test.projects.archive.name>mdl-ide-test-projects-1.4.0-SNAPSHOT-at.zip</test.projects.archive.name>
-        <use.cases.archive.name>mdl-ide-test-projects-1.4.0-SNAPSHOT-usecases.zip</use.cases.archive.name>
+        <test.projects.archive.name>mdl-ide-test-projects-1.5.0-SNAPSHOT-at.zip</test.projects.archive.name>
+        <use.cases.archive.name>mdl-ide-test-projects-1.5.0-SNAPSHOT-usecases.zip</use.cases.archive.name>
         <see.installer.archive.name>see-installer-64b.zip</see.installer.archive.name>
         <see.full.archive.name>see-full-64b.zip</see.full.archive.name>
         <test.that.binary>src/test/resources/R/library/testthat_0.7.2.99.zip</test.that.binary>
